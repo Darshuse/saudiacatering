@@ -1,0 +1,79 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { z } from "zod";
+
+const schema = z.object({
+  amount: z.number().positive("المبلغ يجب أن يكون موجباً"),
+  period: z.string().min(1, "الفترة مطلوبة"),
+  date: z.string(),
+  description: z.string().optional(),
+});
+
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+
+  const { id: estateId } = await params;
+
+  const incomes = await prisma.rentalIncome.findMany({
+    where: { estateId },
+    include: {
+      distributions: {
+        include: { user: { select: { id: true, name: true } } },
+      },
+      collectedBy: { select: { id: true, name: true } },
+    },
+    orderBy: { date: "desc" },
+  });
+
+  return NextResponse.json({ incomes });
+}
+
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+
+  const { id: estateId } = await params;
+
+  try {
+    const body = await req.json();
+    const data = schema.parse(body);
+
+    const income = await prisma.rentalIncome.create({
+      data: {
+        estateId,
+        amount: data.amount,
+        period: data.period,
+        date: new Date(data.date),
+        description: data.description,
+        collectedById: session.userId,
+        status: "PENDING",
+      },
+    });
+
+    // Auto-distribute based on heir shares
+    const heirShares = await prisma.heirShare.findMany({
+      where: { estateId },
+      include: { user: true },
+    });
+
+    if (heirShares.length > 0) {
+      const distributions = heirShares.map((share) => ({
+        rentalIncomeId: income.id,
+        userId: share.userId,
+        amount: (share.sharePercentage / 100) * data.amount,
+        sharePercentage: share.sharePercentage,
+        status: "PENDING" as const,
+      }));
+
+      await prisma.distribution.createMany({ data: distributions });
+      await prisma.rentalIncome.update({ where: { id: income.id }, data: { status: "DISTRIBUTED" } });
+    }
+
+    return NextResponse.json({ income }, { status: 201 });
+  } catch (err) {
+    if (err instanceof z.ZodError) return NextResponse.json({ error: err.issues[0]?.message ?? "خطأ في البيانات" }, { status: 400 });
+    return NextResponse.json({ error: "حدث خطأ" }, { status: 500 });
+  }
+}

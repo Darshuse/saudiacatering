@@ -1,3 +1,4 @@
+
 # Warathah | ورثة
 
 **Islamic Inheritance & Estate Management SaaS Platform**
@@ -303,3 +304,54 @@ This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for d
 ---
 
 *Built with the intention of making the rights of heirs clear, fair, and accessible — in accordance with Islamic principles of justice.*
+# ⚖️ منصة الورثة — Al-Wiratha Platform
+
+**منصة شاملة لإدارة التركات والعقارات المشتركة بين الورثة، وفق أحكام الشريعة الإسلامية والمذاهب الأربعة.**
+
+## ✨ المميزات الرئيسية
+
+- 🏢 **إدارة العقارات**: إضافة العقارات والتركات (شقة، فيلا، أرض، تجاري، مزرعة)
+- 👥 **تقسيم الحصص الشرعية**: حصة كل وارث بنظام الكسور (1/2، 1/4، 1/8...)
+- 💰 **توزيع الإيرادات تلقائياً**: تسجيل إيجار الإيجار وتوزيعه على الورثة فور تسجيله
+- 🗳️ **التصويت على القرارات**: مقترحات والتصويت بوزن الحصص
+- ⚖️ **حاسبة المواريث**: وفق المذاهب الأربعة (الحنفي، المالكي، الشافعي، الحنبلي)
+- 📊 **لوحة تحكم عربية RTL**: نظرة شاملة على كل شيء
+
+## ⚖️ نظام المواريث — المذاهب الأربعة
+
+| المسألة | الحنفي | المالكي | الشافعي | الحنبلي |
+|---------|--------|---------|---------|---------|
+| الجد مع الإخوة | يحجب الإخوة | مقاسمة | مقاسمة | مقاسمة |
+| الرد على الفروض | يُرد (عدا الزوجين) | يُرد | لبيت المال | يُرد |
+| ذوو الأرحام | يرثون | يرثون | لبيت المال | يرثون |
+| المسألة المشتركة | لا تشريك | لا تشريك | تشريك | لا تشريك |
+
+## 🛠️ التقنيات
+
+- **Next.js 16** — App Router + Server Components + Proxy (Middleware)
+- **TypeScript** — Type safety كامل
+- **Prisma 7 + SQLite** — قاعدة بيانات (قابلة للترقية لـ PostgreSQL)
+- **Tailwind CSS** — تصميم عربي RTL
+- **Jose** — JWT Authentication
+- **Bcryptjs** — تشفير كلمات المرور
+- **Zod v4** — التحقق من البيانات
+
+## 🚀 التشغيل المحلي
+
+```bash
+cd al-wiratha
+npm install
+npx prisma migrate dev
+npx tsx prisma/seed.ts
+npm run dev
+```
+
+افتح http://localhost:3000
+
+### بيانات الدخول التجريبية:
+- **admin@wiratha.com** / password123
+- **fatima@wiratha.com** / password123
+
+## ⚠️ تنبيه
+
+للأغراض التعليمية — يُنصح بالرجوع لقاضٍ شرعي لتقسيم التركات الفعلية.
