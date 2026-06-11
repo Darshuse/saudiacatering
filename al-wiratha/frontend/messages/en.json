@@ -1,0 +1,123 @@
+{
+  "app": {
+    "name": "Warathah",
+    "tagline": "Islamic Inheritance & Estate Management Platform",
+    "disclaimer": "This calculation is advisory and does not replace a court ruling or a fatwa from qualified scholars"
+  },
+  "nav": {
+    "inheritance": "Inheritance Calculator",
+    "estates": "Estate Management",
+    "waqf": "Waqf & Mosques",
+    "login": "Login",
+    "register": "Create Account",
+    "dashboard": "Dashboard"
+  },
+  "inheritance": {
+    "title": "Islamic Inheritance Calculator",
+    "subtitle": "Calculate the estate according to Islamic Sharia and the Four Schools of Jurisprudence",
+    "steps": {
+      "madhhab": "Choose School",
+      "deceased": "Deceased Info",
+      "heirs": "Heirs",
+      "results": "Results"
+    },
+    "madhhab": {
+      "title": "Choose the School of Jurisprudence",
+      "hanafi": "Hanafi",
+      "maliki": "Maliki",
+      "shafii": "Shafi'i",
+      "hanbali": "Hanbali",
+      "hanafi_note": "Official school of Egyptian courts in inheritance law",
+      "hanbali_note": "Official school of Saudi courts",
+      "select": "Select"
+    },
+    "deceased": {
+      "title": "Deceased Information",
+      "gender": "Gender of Deceased",
+      "male": "Male",
+      "female": "Female",
+      "gross_estate": "Gross Estate (after debts)",
+      "debts": "Debts (optional)",
+      "funeral_costs": "Funeral Costs (optional)",
+      "wasiyya": "Bequest (must not exceed one-third of remainder)",
+      "currency": "Saudi Riyal"
+    },
+    "heirs": {
+      "title": "Living Heirs",
+      "spouse_section": "Husband / Wife",
+      "children_section": "Sons and Daughters",
+      "parents_section": "Parents",
+      "grandparents_section": "Grandparents",
+      "siblings_section": "Siblings",
+      "other_section": "Other Relatives",
+      "husband": "Husband",
+      "wives": "Wives",
+      "sons": "Sons",
+      "daughters": "Daughters",
+      "father": "Father alive",
+      "mother": "Mother alive",
+      "grandfather": "Grandfather alive",
+      "full_brothers": "Full Brothers",
+      "full_sisters": "Full Sisters",
+      "paternal_brothers": "Paternal Brothers",
+      "paternal_sisters": "Paternal Sisters",
+      "maternal_brothers": "Maternal Brothers",
+      "maternal_sisters": "Maternal Sisters"
+    },
+    "results": {
+      "title": "Sharia Distribution Result",
+      "heir": "Heir",
+      "classification": "Classification",
+      "fraction": "Share",
+      "percentage": "Percentage",
+      "amount": "Amount",
+      "net_estate": "Net Estate",
+      "asl_al_masala": "Base of the Problem",
+      "awl_applied": "Awl Applied",
+      "radd_applied": "Radd Applied",
+      "blocked_heirs": "Blocked Heirs",
+      "explanation": "Jurisprudential Explanation",
+      "save": "Save Calculation",
+      "new": "New Calculation",
+      "print": "Print"
+    },
+    "classification": {
+      "SAHIB_FARD": "Fixed Share Heir",
+      "ASABA": "Residuary Heir",
+      "SAHIB_FARD_AND_ASABA": "Fixed Share & Residuary",
+      "MAHJUB": "Blocked",
+      "DHAWI_ARHAM": "Distant Relatives"
+    }
+  },
+  "estate": {
+    "title": "Estate Management",
+    "subtitle": "Manage shared assets among heirs",
+    "create": "Create New Estate",
+    "assets": "Assets",
+    "distributions": "Distributions",
+    "votes": "Voting",
+    "add_asset": "Add Asset",
+    "add_income": "Record Income",
+    "propose": "Propose Decision"
+  },
+  "waqf": {
+    "title": "Waqf & Mosques",
+    "subtitle": "Manage waqf with full transparency",
+    "donate": "Donate",
+    "campaigns": "Campaigns",
+    "ledger": "Expense Ledger"
+  },
+  "common": {
+    "next": "Next",
+    "back": "Previous",
+    "calculate": "Calculate",
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "yes": "Yes",
+    "no": "No",
+    "sar": "SAR",
+    "egp": "EGP"
+  }
+}

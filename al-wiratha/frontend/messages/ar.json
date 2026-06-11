@@ -1,0 +1,123 @@
+{
+  "app": {
+    "name": "ورثة",
+    "tagline": "منصة إدارة وتقسيم التركات والأوقاف",
+    "disclaimer": "هذه الحسبة استرشادية ولا تغني عن حكم المحكمة المختصة أو فتوى أهل العلم"
+  },
+  "nav": {
+    "inheritance": "حاسبة المواريث",
+    "estates": "إدارة التركات",
+    "waqf": "الأوقاف والمساجد",
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "dashboard": "لوحة التحكم"
+  },
+  "inheritance": {
+    "title": "حاسبة المواريث الشرعية",
+    "subtitle": "احسب التركة وفق أحكام الشريعة الإسلامية والمذاهب الأربعة",
+    "steps": {
+      "madhhab": "اختر المذهب",
+      "deceased": "بيانات المتوفى",
+      "heirs": "الورثة",
+      "results": "النتائج"
+    },
+    "madhhab": {
+      "title": "اختر المذهب الفقهي",
+      "hanafi": "الحنفي",
+      "maliki": "المالكي",
+      "shafii": "الشافعي",
+      "hanbali": "الحنبلي",
+      "hanafi_note": "المذهب الرسمي للمحاكم المصرية في قانون المواريث",
+      "hanbali_note": "المذهب الرسمي للمحاكم السعودية",
+      "select": "اختر"
+    },
+    "deceased": {
+      "title": "بيانات المتوفى",
+      "gender": "جنس المتوفى",
+      "male": "ذكر",
+      "female": "أنثى",
+      "gross_estate": "إجمالي التركة (بعد الديون)",
+      "debts": "الديون (اختياري)",
+      "funeral_costs": "تكاليف الجنازة (اختياري)",
+      "wasiyya": "الوصية (لا تتجاوز ثلث الباقي)",
+      "currency": "ريال سعودي"
+    },
+    "heirs": {
+      "title": "الورثة الأحياء",
+      "spouse_section": "الزوج / الزوجة",
+      "children_section": "الأبناء والبنات",
+      "parents_section": "الوالدان",
+      "grandparents_section": "الأجداد والجدات",
+      "siblings_section": "الإخوة والأخوات",
+      "other_section": "الأقارب الآخرون",
+      "husband": "زوج",
+      "wives": "زوجات",
+      "sons": "أبناء",
+      "daughters": "بنات",
+      "father": "الأب حي",
+      "mother": "الأم حية",
+      "grandfather": "الجد حي",
+      "full_brothers": "أخوة أشقاء",
+      "full_sisters": "أخوات شقيقات",
+      "paternal_brothers": "أخوة لأب",
+      "paternal_sisters": "أخوات لأب",
+      "maternal_brothers": "أخوة لأم",
+      "maternal_sisters": "أخوات لأم"
+    },
+    "results": {
+      "title": "نتيجة التوزيع الشرعي",
+      "heir": "الوارث",
+      "classification": "التصنيف",
+      "fraction": "النصيب",
+      "percentage": "النسبة",
+      "amount": "المبلغ",
+      "net_estate": "صافي التركة",
+      "asl_al_masala": "أصل المسألة",
+      "awl_applied": "تمت العول",
+      "radd_applied": "تم الرد",
+      "blocked_heirs": "المحجوبون",
+      "explanation": "البيان الفقهي",
+      "save": "حفظ الحسبة",
+      "new": "حسبة جديدة",
+      "print": "طباعة"
+    },
+    "classification": {
+      "SAHIB_FARD": "صاحب فرض",
+      "ASABA": "عاصب",
+      "SAHIB_FARD_AND_ASABA": "صاحب فرض وعاصب",
+      "MAHJUB": "محجوب",
+      "DHAWI_ARHAM": "ذوو أرحام"
+    }
+  },
+  "estate": {
+    "title": "إدارة التركات",
+    "subtitle": "إدارة الأصول المشتركة بين الورثة",
+    "create": "إنشاء تركة جديدة",
+    "assets": "الأصول",
+    "distributions": "التوزيعات",
+    "votes": "التصويت",
+    "add_asset": "إضافة أصل",
+    "add_income": "تسجيل إيراد",
+    "propose": "اقتراح قرار"
+  },
+  "waqf": {
+    "title": "الأوقاف والمساجد",
+    "subtitle": "إدارة الوقف بشفافية كاملة",
+    "donate": "التبرع",
+    "campaigns": "الحملات",
+    "ledger": "دفتر المصروفات"
+  },
+  "common": {
+    "next": "التالي",
+    "back": "السابق",
+    "calculate": "احسب",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "loading": "جارٍ التحميل...",
+    "error": "حدث خطأ",
+    "yes": "نعم",
+    "no": "لا",
+    "sar": "ريال",
+    "egp": "جنيه"
+  }
+}

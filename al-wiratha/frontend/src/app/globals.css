@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-ibm-plex-arabic: 'IBM Plex Sans Arabic', sans-serif;
+  }
+
+  body {
+    @apply antialiased;
+    font-feature-settings: 'kern', 'liga';
+  }
+
+  [dir="rtl"] {
+    text-align: right;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white px-6 py-3 rounded-xl font-semibold
+           hover:bg-primary-600 active:scale-95 transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-primary/50;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-white px-6 py-3 rounded-xl font-semibold
+           hover:bg-secondary-600 active:scale-95 transition-all duration-200;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6;
+  }
+
+  .input-field {
+    @apply w-full border border-gray-300 rounded-xl px-4 py-3 text-sm
+           focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
+           bg-white transition-all duration-200;
+  }
+
+  .islamic-pattern-bg {
+    @apply bg-islamic-pattern;
+  }
+
+  .section-title {
+    @apply text-2xl font-bold text-primary mb-2;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+}
+
+.arabic-numerals {
+  font-feature-settings: 'locl';
+  font-variant-numeric: ordinal;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #0F4C3A; border-radius: 3px; }
