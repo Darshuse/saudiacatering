@@ -2,33 +2,33 @@
   "app": {
     "name": "Warathah",
     "tagline": "Islamic Inheritance & Estate Management Platform",
-    "disclaimer": "This calculation is advisory and does not replace a court ruling or a fatwa from qualified scholars"
+    "disclaimer": "This calculation is for guidance only and does not replace a court ruling or a scholarly fatwa"
   },
   "nav": {
     "inheritance": "Inheritance Calculator",
     "estates": "Estate Management",
     "waqf": "Waqf & Mosques",
-    "login": "Login",
+    "login": "Sign In",
     "register": "Create Account",
     "dashboard": "Dashboard"
   },
   "inheritance": {
     "title": "Islamic Inheritance Calculator",
-    "subtitle": "Calculate the estate according to Islamic Sharia and the Four Schools of Jurisprudence",
+    "subtitle": "Calculate inheritance according to Islamic Sharia and the four schools of thought",
     "steps": {
-      "madhhab": "Choose School",
+      "madhhab": "Choose Madhhab",
       "deceased": "Deceased Info",
       "heirs": "Heirs",
       "results": "Results"
     },
     "madhhab": {
-      "title": "Choose the School of Jurisprudence",
+      "title": "Choose Jurisprudential School",
       "hanafi": "Hanafi",
       "maliki": "Maliki",
       "shafii": "Shafi'i",
       "hanbali": "Hanbali",
-      "hanafi_note": "Official school of Egyptian courts in inheritance law",
-      "hanbali_note": "Official school of Saudi courts",
+      "hanafi_note": "Official school for Egyptian courts in inheritance law",
+      "hanbali_note": "Official school for Saudi Arabian courts",
       "select": "Select"
     },
     "deceased": {
@@ -36,10 +36,10 @@
       "gender": "Gender of Deceased",
       "male": "Male",
       "female": "Female",
-      "gross_estate": "Gross Estate (after debts)",
+      "gross_estate": "Total Estate (after debts)",
       "debts": "Debts (optional)",
       "funeral_costs": "Funeral Costs (optional)",
-      "wasiyya": "Bequest (must not exceed one-third of remainder)",
+      "wasiyya": "Bequest (not to exceed one-third of remainder)",
       "currency": "Saudi Riyal"
     },
     "heirs": {
@@ -48,7 +48,7 @@
       "children_section": "Sons and Daughters",
       "parents_section": "Parents",
       "grandparents_section": "Grandparents",
-      "siblings_section": "Siblings",
+      "siblings_section": "Brothers and Sisters",
       "other_section": "Other Relatives",
       "husband": "Husband",
       "wives": "Wives",
@@ -65,25 +65,25 @@
       "maternal_sisters": "Maternal Sisters"
     },
     "results": {
-      "title": "Sharia Distribution Result",
+      "title": "Sharia Distribution Results",
       "heir": "Heir",
       "classification": "Classification",
       "fraction": "Share",
       "percentage": "Percentage",
       "amount": "Amount",
       "net_estate": "Net Estate",
-      "asl_al_masala": "Base of the Problem",
+      "asl_al_masala": "Base of Problem",
       "awl_applied": "Awl Applied",
       "radd_applied": "Radd Applied",
       "blocked_heirs": "Blocked Heirs",
-      "explanation": "Jurisprudential Explanation",
+      "explanation": "Fiqh Explanation",
       "save": "Save Calculation",
       "new": "New Calculation",
       "print": "Print"
     },
     "classification": {
-      "SAHIB_FARD": "Fixed Share Heir",
-      "ASABA": "Residuary Heir",
+      "SAHIB_FARD": "Fixed Share",
+      "ASABA": "Residuary",
       "SAHIB_FARD_AND_ASABA": "Fixed Share & Residuary",
       "MAHJUB": "Blocked",
       "DHAWI_ARHAM": "Distant Relatives"
@@ -102,14 +102,14 @@
   },
   "waqf": {
     "title": "Waqf & Mosques",
-    "subtitle": "Manage waqf with full transparency",
+    "subtitle": "Manage endowments with full transparency",
     "donate": "Donate",
     "campaigns": "Campaigns",
     "ledger": "Expense Ledger"
   },
   "common": {
     "next": "Next",
-    "back": "Previous",
+    "back": "Back",
     "calculate": "Calculate",
     "save": "Save",
     "cancel": "Cancel",
