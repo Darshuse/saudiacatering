@@ -54,15 +54,18 @@ public class InheritanceEngine {
         Fraction awlFactor = Fraction.ONE;
         if (totalFurud.isGreaterThan(Fraction.ONE)) {
             awlApplied = true;
-            awlFactor = Fraction.ONE.divide(totalFurud);
+            final Fraction factor = Fraction.ONE.divide(totalFurud);
+            awlFactor = factor;
             Map<HeirType, Fraction> awled = new LinkedHashMap<>();
-            furudShares.forEach((k, v) -> awled.put(k, v.multiply(awlFactor)));
+            furudShares.forEach((k, v) -> awled.put(k, v.multiply(factor)));
             furudShares = awled;
             totalFurud = Fraction.ONE;
         }
 
         // Step 6: Assign asaba
-        Map<HeirType, Fraction> allShares = new LinkedHashMap<>(furudShares);
+        // final copy after potential awl reassignment — safe for lambda capture
+        final Map<HeirType, Fraction> finalFurud = furudShares;
+        Map<HeirType, Fraction> allShares = new LinkedHashMap<>(finalFurud);
         boolean raddApplied = false;
         Fraction remainder = Fraction.ONE.subtract(totalFurud);
 
@@ -112,7 +115,7 @@ public class InheritanceEngine {
                 // No asaba: Radd (الرد)
                 raddApplied = true;
                 Map<HeirType, Fraction> raddBase = new LinkedHashMap<>();
-                furudShares.forEach((ht, sh) -> {
+                finalFurud.forEach((ht, sh) -> {
                     boolean isSpouse = ht == HeirType.HUSBAND || ht == HeirType.WIFE;
                     if (!isSpouse || rules.applyRaddToSpouse(input)) {
                         raddBase.put(ht, sh);
@@ -121,10 +124,9 @@ public class InheritanceEngine {
                 Fraction raddTotal = raddBase.values().stream()
                     .reduce(Fraction.ZERO, Fraction::add);
                 if (!raddTotal.isZero()) {
-                    final Map<HeirType, Fraction> furudFinal = furudShares;
                     raddBase.forEach((ht, sh) -> {
                         Fraction raddAdd = remainder.multiply(sh.divide(raddTotal));
-                        allShares.put(ht, furudFinal.get(ht).add(raddAdd));
+                        allShares.put(ht, finalFurud.get(ht).add(raddAdd));
                     });
                 }
             }
