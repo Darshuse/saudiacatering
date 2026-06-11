@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #1e40af;
+  --primary-light: #3b82f6;
+  --primary-dark: #1e3a8a;
+  --accent: #d97706;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --border: #e2e8f0;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  direction: rtl;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Cairo", "Segoe UI", system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--muted); }
+::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+/* Focus */
+*:focus-visible {
+  outline: 2px solid var(--primary-light);
+  outline-offset: 2px;
+}
+
+/* Transitions */
+a, button { transition: all 0.2s ease; }
+
+/* Arabic number formatting */
+.ar-nums { font-feature-settings: "kern", "liga"; }
+
+/* Print */
+@media print {
+  .no-print { display: none !important; }
+}
