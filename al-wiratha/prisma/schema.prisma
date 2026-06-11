@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  password   String
+  phone      String?
+  nationalId String?
+  role       Role     @default(HEIR)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  adminEstates   Estate[]       @relation("EstateAdmin")
+  heirShares     HeirShare[]
+  distributions  Distribution[]
+  proposals      Proposal[]
+  votes          Vote[]
+  createdIncomes RentalIncome[] @relation("IncomeCollector")
+}
+
+enum Role {
+  ADMIN
+  HEIR
+}
+
+model Estate {
+  id          String       @id @default(cuid())
+  name        String
+  type        EstateType
+  description String?
+  location    String?
+  area        Float?
+  value       Float?
+  adminId     String
+  status      EstateStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  admin         User           @relation("EstateAdmin", fields: [adminId], references: [id])
+  heirShares    HeirShare[]
+  rentalIncomes RentalIncome[]
+  proposals     Proposal[]
+}
+
+enum EstateType {
+  APARTMENT
+  VILLA
+  LAND
+  COMMERCIAL
+  FARM
+  OTHER
+}
+
+enum EstateStatus {
+  ACTIVE
+  SOLD
+  DISPUTED
+}
+
+model HeirShare {
+  id               String   @id @default(cuid())
+  estateId         String
+  userId           String
+  shareNumerator   Int
+  shareDenominator Int
+  sharePercentage  Float
+  relation         String?
+  createdAt        DateTime @default(now())
+
+  estate Estate @relation(fields: [estateId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([estateId, userId])
+}
+
+model RentalIncome {
+  id            String       @id @default(cuid())
+  estateId      String
+  amount        Float
+  period        String
+  date          DateTime
+  description   String?
+  collectedById String?
+  status        IncomeStatus @default(PENDING)
+  createdAt     DateTime     @default(now())
+
+  estate        Estate         @relation(fields: [estateId], references: [id], onDelete: Cascade)
+  collectedBy   User?          @relation("IncomeCollector", fields: [collectedById], references: [id])
+  distributions Distribution[]
+}
+
+enum IncomeStatus {
+  PENDING
+  DISTRIBUTED
+}
+
+model Distribution {
+  id              String             @id @default(cuid())
+  rentalIncomeId  String
+  userId          String
+  amount          Float
+  sharePercentage Float
+  status          DistributionStatus @default(PENDING)
+  paidAt          DateTime?
+  createdAt       DateTime           @default(now())
+
+  rentalIncome RentalIncome @relation(fields: [rentalIncomeId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+}
+
+enum DistributionStatus {
+  PENDING
+  PAID
+}
+
+model Proposal {
+  id          String         @id @default(cuid())
+  estateId    String
+  title       String
+  description String
+  createdById String
+  deadline    DateTime
+  status      ProposalStatus @default(OPEN)
+  createdAt   DateTime       @default(now())
+
+  estate    Estate @relation(fields: [estateId], references: [id], onDelete: Cascade)
+  createdBy User   @relation(fields: [createdById], references: [id])
+  votes     Vote[]
+}
+
+enum ProposalStatus {
+  OPEN
+  CLOSED
+  APPROVED
+  REJECTED
+}
+
+model Vote {
+  id         String     @id @default(cuid())
+  proposalId String
+  userId     String
+  choice     VoteChoice
+  comment    String?
+  weight     Float
+  createdAt  DateTime   @default(now())
+
+  proposal Proposal @relation(fields: [proposalId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([proposalId, userId])
+}
+
+enum VoteChoice {
+  YES
+  NO
+  ABSTAIN
+}
