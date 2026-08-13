@@ -1,8 +1,13 @@
 import Link from "next/link";
 import { FaqAccordion } from "@/components/ui/faq-accordion";
 import { WhatsAppButton } from "@/components/ui/whatsapp-button";
+import { getSupportWhatsApp } from "@/lib/whatsapp";
 
-export default function LandingPage() {
+// Re-check the owner's registered WhatsApp number every hour.
+export const revalidate = 3600;
+
+export default async function LandingPage() {
+  const whatsapp = await getSupportWhatsApp();
   const features = [
     { icon: "🏢", title: "إدارة العقارات والتركات", desc: "أضف عقاراتك وتركاتك وحدد قيمتها ونوعها وموقعها بسهولة تامة" },
     { icon: "⚖️", title: "تقسيم الحصص الشرعية", desc: "حدد حصة كل وارث بنظام الكسور الشرعية (1/2، 1/4، 1/8...) تلقائياً" },
@@ -141,7 +146,7 @@ export default function LandingPage() {
         <p className="text-xs mt-1 text-gray-600">للأغراض التعليمية — يُنصح بالرجوع للجهات الشرعية المختصة</p>
       </footer>
 
-      <WhatsAppButton />
+      <WhatsAppButton phone={whatsapp} />
     </div>
   );
 }

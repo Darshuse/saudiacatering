@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { InheritanceCalculator } from "@/components/calculator/inheritance-calculator";
 import { WhatsAppButton } from "@/components/ui/whatsapp-button";
+import { getSupportWhatsApp } from "@/lib/whatsapp";
+
+// Re-check the owner's registered WhatsApp number every hour.
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "حاسبة المواريث الشرعية مجاناً — وفق المذاهب الأربعة | منصة الورثة",
@@ -9,7 +13,8 @@ export const metadata: Metadata = {
     "احسب الأنصبة الشرعية للورثة مجاناً وبدون تسجيل — وفق المذاهب الأربعة: الحنفي والمالكي والشافعي والحنبلي. مع بيان العول والرد والحجب وأساس كل نصيب.",
 };
 
-export default function PublicCalculatorPage() {
+export default async function PublicCalculatorPage() {
+  const whatsapp = await getSupportWhatsApp();
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Light nav */}
@@ -41,7 +46,7 @@ export default function PublicCalculatorPage() {
         <p>منصة الورثة © 2026 — الحساب يتم داخل متصفحك ولا تُرسل بياناتك إلى أي خادم</p>
       </footer>
 
-      <WhatsAppButton />
+      <WhatsAppButton phone={whatsapp} />
     </div>
   );
 }

@@ -1,11 +1,11 @@
-// TODO: ضع رقم واتساب الحقيقي قبل الإطلاق (بصيغة دولية بدون +)
-const WHATSAPP_NUMBER = "9665XXXXXXXX";
 const MESSAGE = "السلام عليكم، لدي استفسار عن منصة الورثة";
 
-export function WhatsAppButton() {
+export function WhatsAppButton({ phone }: { phone: string | null }) {
+  if (!phone) return null;
+
   return (
     <a
-      href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(MESSAGE)}`}
+      href={`https://wa.me/${phone}?text=${encodeURIComponent(MESSAGE)}`}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="تحدث معنا على واتساب"
