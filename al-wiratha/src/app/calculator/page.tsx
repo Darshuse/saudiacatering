@@ -18,7 +18,7 @@ export default async function PublicCalculatorPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Light nav */}
-      <nav className="bg-blue-950 text-white">
+      <nav className="bg-blue-950 text-white print:hidden">
         <div className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
           <Link href="/" className="flex items-center gap-3">
             <span className="text-2xl">⚖️</span>
@@ -42,7 +42,7 @@ export default async function PublicCalculatorPage() {
         <InheritanceCalculator variant="public" />
       </div>
 
-      <footer className="text-center py-6 text-sm text-gray-400">
+      <footer className="text-center py-6 text-sm text-gray-400 print:hidden">
         <p>منصة الورثة © 2026 — الحساب يتم داخل متصفحك ولا تُرسل بياناتك إلى أي خادم</p>
       </footer>
 

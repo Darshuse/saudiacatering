@@ -9,7 +9,7 @@ export function WhatsAppButton({ phone }: { phone: string | null }) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="تحدث معنا على واتساب"
-      className="fixed bottom-6 left-6 z-50 group flex items-center gap-2"
+      className="fixed bottom-6 left-6 z-50 group flex items-center gap-2 print:hidden"
     >
       <span className="hidden lg:block bg-white text-gray-700 text-sm font-semibold px-3 py-2 rounded-xl shadow-lg border border-gray-200 opacity-0 group-hover:opacity-100 transition-opacity">
         تحدث معنا على واتساب

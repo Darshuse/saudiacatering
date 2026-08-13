@@ -15,12 +15,38 @@ const defaultInput: HeirInput = {
   sonsOfSon: 0, daughtersOfSon: 0,
 };
 
+function buildShareText(results: InheritanceResult[], origin: string): string {
+  const lines: string[] = ["⚖️ نتيجة قسمة المواريث الشرعية", ""];
+  for (const r of results) {
+    lines.push(`◈ المذهب ${r.madhabLabel}:`);
+    for (const h of r.heirs) {
+      const count = h.count > 1 ? ` (عددهم ${h.count})` : "";
+      const amount = h.totalAmount !== undefined ? ` — ${Math.round(h.totalAmount).toLocaleString("ar-SA")} ريال` : "";
+      lines.push(`• ${h.nameAr}${count}: ${h.fraction} أي ${h.percentage.toFixed(2)}%${amount}`);
+    }
+    if (r.awl) lines.push("(المسألة فيها عَول)");
+    if (r.radd) lines.push("(المسألة فيها رَد)");
+    lines.push("");
+  }
+  lines.push("النتيجة استئناسية ولا تغني عن مختص الفرائض.");
+  lines.push("");
+  lines.push(`احسبها بنفسك مجاناً وبدون تسجيل — منصة الورثة:`);
+  lines.push(`${origin}/calculator`);
+  return lines.join("\n");
+}
+
 export function InheritanceCalculator({ variant }: { variant: "public" | "dashboard" }) {
   const [input, setInput] = useState<HeirInput>(defaultInput);
   const [estateValue, setEstateValue] = useState("");
   const [selectedMadhab, setSelectedMadhab] = useState<Madhab | "ALL">("ALL");
   const [results, setResults] = useState<InheritanceResult[] | null>(null);
   const [showDiffs, setShowDiffs] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   // Dashboard: restore a draft saved from the public calculator before signup.
   useEffect(() => {
@@ -69,6 +95,22 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
     }
   }
 
+  async function shareResults() {
+    if (!results) return;
+    const text = buildShareText(results, origin);
+    try {
+      if (navigator.share) {
+        await navigator.share({ text });
+        return;
+      }
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    } catch {
+      // user cancelled the share sheet — nothing to do
+    }
+  }
+
   const diffs = getMadhabDifferences();
 
   return (
@@ -87,7 +129,7 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
       </div>
 
       {/* Madhab selector */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 print:hidden">
         <h2 className="font-bold text-gray-900 mb-4">اختر المذهب</h2>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <button
@@ -111,7 +153,7 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Input Form */}
-        <div className="lg:col-span-1 space-y-4">
+        <div className="lg:col-span-1 space-y-4 print:hidden">
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
             <h2 className="font-bold text-gray-900 mb-4">من ترك المتوفى؟</h2>
 
@@ -189,29 +231,37 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
             <>
               {results.map((result) => <ResultCard key={result.madhab} result={result} />)}
 
+              {/* Share & print — the family WhatsApp group is the real growth channel */}
+              <div className="flex gap-3 flex-wrap print:hidden">
+                <button
+                  onClick={shareResults}
+                  className="flex-1 min-w-48 bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-bold text-sm transition-colors shadow-sm"
+                >
+                  {copied ? "✓ تم نسخ النتيجة — الصقها في محادثة العائلة" : "📤 شارك النتيجة مع العائلة"}
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="px-5 py-3 rounded-xl text-sm font-semibold text-gray-600 border border-gray-300 hover:bg-gray-50 bg-white transition-colors"
+                >
+                  🖨️ اطبع النتيجة
+                </button>
+              </div>
+
               {/* Freemium hook — public variant only, after results appear */}
               {variant === "public" && (
-                <div className="bg-gradient-to-l from-amber-500 to-amber-600 text-white rounded-2xl p-6 shadow-xl">
+                <div className="bg-gradient-to-l from-amber-500 to-amber-600 text-white rounded-2xl p-6 shadow-xl print:hidden">
                   <h3 className="text-xl font-bold mb-1">احفظ النتيجة وابدأ إدارة التركة</h3>
                   <p className="text-amber-100 text-sm mb-4 leading-relaxed">
                     أنشئ حساباً مجانياً خلال دقيقة لحفظ هذه القسمة، وإضافة العقارات،
                     وتوزيع إيرادات الإيجار على الورثة تلقائياً بحسب أنصبتهم.
                   </p>
-                  <div className="flex gap-3 flex-wrap">
-                    <Link
-                      href="/auth/register"
-                      onClick={saveDraft}
-                      className="bg-white text-amber-700 px-6 py-3 rounded-xl font-bold hover:bg-amber-50 transition-colors"
-                    >
-                      احفظ النتيجة وأنشئ التركة ←
-                    </Link>
-                    <button
-                      onClick={() => window.print()}
-                      className="border border-white/40 px-5 py-3 rounded-xl font-semibold hover:bg-white/10 transition-colors"
-                    >
-                      🖨️ اطبع النتيجة
-                    </button>
-                  </div>
+                  <Link
+                    href="/auth/register"
+                    onClick={saveDraft}
+                    className="inline-block bg-white text-amber-700 px-6 py-3 rounded-xl font-bold hover:bg-amber-50 transition-colors"
+                  >
+                    احفظ النتيجة وأنشئ التركة ←
+                  </Link>
                 </div>
               )}
             </>
@@ -220,7 +270,7 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
       </div>
 
       {/* Madhab differences */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden print:hidden">
         <button
           className="w-full px-6 py-4 flex items-center justify-between text-right font-bold text-gray-900 hover:bg-gray-50"
           onClick={() => setShowDiffs(!showDiffs)}
@@ -259,6 +309,12 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
       {/* Disclaimer */}
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
         <strong>⚠️ تنبيه هام:</strong> هذه الحاسبة للأغراض التعليمية والاستئناسية فقط. لا تُعتمد نتائجها في تقسيم التركات الفعلية دون الرجوع إلى قاضٍ شرعي أو عالم متخصص في الفرائض.
+      </div>
+
+      {/* Print-only branding — every printed result is an ad inside the family group */}
+      <div className="hidden print:block text-center border-t border-gray-300 pt-4 mt-6 text-sm text-gray-700">
+        <p className="font-bold">⚖️ منصة الورثة — حاسبة المواريث الشرعية وفق المذاهب الأربعة</p>
+        <p className="mt-1">احسبها بنفسك مجاناً وبدون تسجيل: {origin}/calculator</p>
       </div>
     </div>
   );

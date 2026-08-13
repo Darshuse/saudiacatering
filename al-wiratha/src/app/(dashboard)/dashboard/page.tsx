@@ -46,6 +46,26 @@ export default async function DashboardPage() {
     }),
   ]);
 
+  // Onboarding progress — the first estate the user administers drives steps 2 & 3
+  const adminEstates = estates.filter((e) => e.adminId === session.userId);
+  const firstAdminEstate = adminEstates[0];
+  const steps = [
+    { done: estates.length > 0, label: "أضف أول عقار أو تركة", href: "/estates/new" },
+    {
+      done: adminEstates.some((e) => e.heirShares.length > 0) || (estates.length > 0 && adminEstates.length === 0),
+      label: "أضف الورثة وحدد حصصهم الشرعية",
+      href: firstAdminEstate ? `/estates/${firstAdminEstate.id}/heirs` : "/estates/new",
+    },
+    {
+      done: estates.some((e) => e._count.rentalIncomes > 0),
+      label: "سجّل أول إيراد إيجار ليتوزع تلقائياً",
+      href: firstAdminEstate ? `/estates/${firstAdminEstate.id}/income` : "/estates/new",
+    },
+  ];
+  const doneCount = steps.filter((s) => s.done).length;
+  const showOnboarding = doneCount < steps.length;
+  const nextStepIndex = steps.findIndex((s) => !s.done);
+
   const totalEstateValue = estates.reduce((s, e) => s + (e.value ?? 0), 0);
   const myShare = estates.reduce((s, e) => {
     const share = e.heirShares.find((h) => h.userId === session.userId);
@@ -60,6 +80,45 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-bold text-gray-900">مرحباً، {session.name} 👋</h1>
         <p className="text-gray-500 mt-1">لوحة تحكم منصة الورثة — إدارة التركات وفق الشريعة الإسلامية</p>
       </div>
+
+      {/* Onboarding — a stressed new user needs to be told exactly what to do next */}
+      {showOnboarding && (
+        <div className="bg-gradient-to-l from-blue-900 to-blue-700 text-white rounded-2xl p-6 shadow-lg">
+          <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+            <div>
+              <h2 className="text-lg font-bold">لنجهّز تركتك في 3 خطوات</h2>
+              <p className="text-blue-200 text-sm mt-0.5">دقائق معدودة وتكون كل الحصص والإيرادات تحت السيطرة</p>
+            </div>
+            <span className="bg-white/15 text-sm font-bold px-3 py-1.5 rounded-full">
+              {doneCount} من {steps.length}
+            </span>
+          </div>
+          <div className="h-2 bg-white/15 rounded-full overflow-hidden mb-5">
+            <div className="h-full bg-amber-400 rounded-full transition-all" style={{ width: `${(doneCount / steps.length) * 100}%` }} />
+          </div>
+          <div className="space-y-2">
+            {steps.map((step, i) => (
+              <Link
+                key={step.label}
+                href={step.href}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-colors ${
+                  step.done
+                    ? "bg-white/5 text-blue-200"
+                    : i === nextStepIndex
+                      ? "bg-amber-500 hover:bg-amber-400 text-white font-bold shadow-md"
+                      : "bg-white/10 hover:bg-white/15 text-white"
+                }`}
+              >
+                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${step.done ? "bg-green-500 text-white" : "bg-white/20"}`}>
+                  {step.done ? "✓" : i + 1}
+                </span>
+                <span className={`text-sm ${step.done ? "line-through opacity-70" : ""}`}>{step.label}</span>
+                {!step.done && i === nextStepIndex && <span className="mr-auto text-sm">ابدأ ←</span>}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
