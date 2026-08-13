@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { FaqAccordion } from "@/components/ui/faq-accordion";
+import { FaqAccordion, faqs } from "@/components/ui/faq-accordion";
+import { SITE_URL } from "@/lib/site";
 import { WhatsAppButton } from "@/components/ui/whatsapp-button";
 import { getSupportWhatsApp } from "@/lib/whatsapp";
+import { TrackEvent } from "@/components/analytics/track-event";
 
 // Re-check the owner's registered WhatsApp number every hour.
 export const revalidate = 3600;
@@ -24,8 +26,36 @@ export default async function LandingPage() {
     { name: "الحنبلي", color: "bg-orange-100 text-orange-800 border-orange-200", region: "السعودية • الخليج" },
   ];
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        name: "منصة الورثة",
+        url: SITE_URL,
+        description: "منصة إدارة وتقسيم التركات والعقارات المشتركة وفق الشريعة الإسلامية والمذاهب الأربعة",
+      },
+      {
+        "@type": "WebSite",
+        name: "منصة الورثة",
+        url: SITE_URL,
+        inLanguage: "ar",
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: faqs.map((f) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+      <TrackEvent name="visit_landing" />
       {/* Hero */}
       <div className="bg-gradient-to-bl from-blue-950 via-blue-900 to-blue-800 text-white">
         <nav className="flex items-center justify-between px-8 py-5 max-w-7xl mx-auto">

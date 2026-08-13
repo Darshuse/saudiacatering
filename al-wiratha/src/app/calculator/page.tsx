@@ -3,20 +3,41 @@ import Link from "next/link";
 import { InheritanceCalculator } from "@/components/calculator/inheritance-calculator";
 import { WhatsAppButton } from "@/components/ui/whatsapp-button";
 import { getSupportWhatsApp } from "@/lib/whatsapp";
+import { TrackEvent } from "@/components/analytics/track-event";
 
 // Re-check the owner's registered WhatsApp number every hour.
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "حاسبة المواريث الشرعية مجاناً — وفق المذاهب الأربعة | منصة الورثة",
+  title: "حاسبة المواريث الشرعية مجاناً — وفق المذاهب الأربعة",
   description:
     "احسب الأنصبة الشرعية للورثة مجاناً وبدون تسجيل — وفق المذاهب الأربعة: الحنفي والمالكي والشافعي والحنبلي. مع بيان العول والرد والحجب وأساس كل نصيب.",
+  alternates: { canonical: "/calculator" },
+  openGraph: {
+    title: "حاسبة المواريث الشرعية مجاناً — وفق المذاهب الأربعة",
+    description: "احسب نصيب كل وارث بالكسر الشرعي والنسبة والمبلغ، مجاناً وبدون تسجيل — الحساب يتم داخل متصفحك",
+    url: "/calculator",
+  },
+};
+
+const calculatorSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "حاسبة المواريث الشرعية — منصة الورثة",
+  applicationCategory: "FinanceApplication",
+  operatingSystem: "Web",
+  inLanguage: "ar",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "SAR" },
+  description:
+    "حاسبة مواريث مجانية تعمل بدون تسجيل وفق المذاهب الأربعة: الحنفي والمالكي والشافعي والحنبلي، مع بيان العول والرد والحجب.",
 };
 
 export default async function PublicCalculatorPage() {
   const whatsapp = await getSupportWhatsApp();
   return (
     <div className="min-h-screen bg-gray-50">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(calculatorSchema) }} />
+      <TrackEvent name="visit_calculator" />
       {/* Light nav */}
       <nav className="bg-blue-950 text-white print:hidden">
         <div className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">

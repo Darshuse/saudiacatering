@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { calculateInheritance, getMadhabDifferences, MADHABS, type HeirInput, type InheritanceResult, type Madhab } from "@/lib/inheritance";
+import { track } from "@/lib/analytics-client";
 
 const DRAFT_KEY = "wiratha-calc-draft";
 
@@ -79,6 +80,7 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
     const madhabs: Madhab[] = selectedMadhab === "ALL" ? ["HANAFI", "MALIKI", "SHAFII", "HANBALI"] : [selectedMadhab];
     const res = madhabs.map((m) => calculateInheritance(input, m, value));
     setResults(res);
+    track("calc_result", selectedMadhab);
   }
 
   function reset() {
@@ -88,6 +90,7 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
   }
 
   function saveDraft() {
+    track("cta_save_draft");
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify({ input, estateValue, selectedMadhab }));
     } catch {
@@ -97,6 +100,7 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
 
   async function shareResults() {
     if (!results) return;
+    track("share_result");
     const text = buildShareText(results, origin);
     try {
       if (navigator.share) {
@@ -240,7 +244,7 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
                   {copied ? "✓ تم نسخ النتيجة — الصقها في محادثة العائلة" : "📤 شارك النتيجة مع العائلة"}
                 </button>
                 <button
-                  onClick={() => window.print()}
+                  onClick={() => { track("print_result"); window.print(); }}
                   className="px-5 py-3 rounded-xl text-sm font-semibold text-gray-600 border border-gray-300 hover:bg-gray-50 bg-white transition-colors"
                 >
                   🖨️ اطبع النتيجة

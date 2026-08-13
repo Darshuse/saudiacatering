@@ -36,6 +36,11 @@ export async function POST(req: NextRequest) {
 
     await setSession({ userId: user.id, email: user.email, name: user.name, role: user.role });
 
+    // Server-side funnel event — can't be blocked or double-fired by the client.
+    prisma.analyticsEvent
+      .create({ data: { name: "register_success", userId: user.id, path: "/auth/register" } })
+      .catch(() => {});
+
     return NextResponse.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (err) {
     if (err instanceof z.ZodError) {

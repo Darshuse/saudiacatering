@@ -162,3 +162,15 @@ enum VoteChoice {
   NO
   ABSTAIN
 }
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  name      String
+  path      String?
+  visitorId String?
+  userId    String?
+  meta      String?
+  createdAt DateTime @default(now())
+
+  @@index([name, createdAt])
+}

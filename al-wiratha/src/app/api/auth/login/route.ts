@@ -32,6 +32,10 @@ export async function POST(req: NextRequest) {
 
     await setSession({ userId: user.id, email: user.email, name: user.name, role: user.role });
 
+    prisma.analyticsEvent
+      .create({ data: { name: "login_success", userId: user.id, path: "/auth/login" } })
+      .catch(() => {});
+
     return NextResponse.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (err) {
     if (err instanceof z.ZodError) {

@@ -7,7 +7,7 @@ export default async function DashboardPage() {
   const session = await getSession();
   if (!session) return null;
 
-  const [estates, distributions, recentVotes] = await Promise.all([
+  const [estates, distributions, recentVotes, oldestUser] = await Promise.all([
     prisma.estate.findMany({
       where: {
         OR: [
@@ -44,7 +44,9 @@ export default async function DashboardPage() {
       orderBy: { createdAt: "desc" },
       take: 5,
     }),
+    prisma.user.findFirst({ orderBy: { createdAt: "asc" }, select: { id: true } }),
   ]);
+  const isPlatformOwner = oldestUser?.id === session.userId;
 
   // Onboarding progress — the first estate the user administers drives steps 2 & 3
   const adminEstates = estates.filter((e) => e.adminId === session.userId);
@@ -76,9 +78,16 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">مرحباً، {session.name} 👋</h1>
-        <p className="text-gray-500 mt-1">لوحة تحكم منصة الورثة — إدارة التركات وفق الشريعة الإسلامية</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">مرحباً، {session.name} 👋</h1>
+          <p className="text-gray-500 mt-1">لوحة تحكم منصة الورثة — إدارة التركات وفق الشريعة الإسلامية</p>
+        </div>
+        {isPlatformOwner && (
+          <Link href="/analytics" className="bg-white border border-gray-200 shadow-sm rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+            📊 تقرير التحويل
+          </Link>
+        )}
       </div>
 
       {/* Onboarding — a stressed new user needs to be told exactly what to do next */}
