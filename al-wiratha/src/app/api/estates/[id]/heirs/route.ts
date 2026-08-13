@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { requireEstateAdmin } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
@@ -65,13 +66,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 }
 
+const deleteSchema = z.object({ userId: z.string().min(1) });
+
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
 
   const { id: estateId } = await params;
-  const { userId } = await req.json();
+  const access = await requireEstateAdmin(estateId, session.userId);
+  if (access instanceof NextResponse) return access;
 
-  await prisma.heirShare.delete({ where: { estateId_userId: { estateId, userId } } });
-  return NextResponse.json({ success: true });
+  try {
+    const { userId } = deleteSchema.parse(await req.json());
+    await prisma.heirShare.delete({ where: { estateId_userId: { estateId, userId } } });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    if (err instanceof z.ZodError) return NextResponse.json({ error: "خطأ في البيانات" }, { status: 400 });
+    return NextResponse.json({ error: "الوريث غير موجود" }, { status: 404 });
+  }
 }

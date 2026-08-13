@@ -1,20 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { requireEstateMember, requireEstateAdmin } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
-const schema = z.object({
-  amount: z.number().positive("المبلغ يجب أن يكون موجباً"),
-  period: z.string().min(1, "الفترة مطلوبة"),
-  date: z.string(),
-  description: z.string().optional(),
-});
+const schema = z
+  .object({
+    amount: z.number().positive("المبلغ يجب أن يكون موجباً"),
+    period: z.string().min(1, "الفترة مطلوبة"),
+    date: z.string().refine((s) => !isNaN(Date.parse(s)), "تاريخ غير صالح"),
+    description: z.string().optional(),
+  })
+  .strict();
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
 
   const { id: estateId } = await params;
+  const access = await requireEstateMember(estateId, session.userId);
+  if (access instanceof NextResponse) return access;
 
   const incomes = await prisma.rentalIncome.findMany({
     where: { estateId },
@@ -35,6 +40,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
 
   const { id: estateId } = await params;
+  const access = await requireEstateAdmin(estateId, session.userId);
+  if (access instanceof NextResponse) return access;
 
   try {
     const body = await req.json();

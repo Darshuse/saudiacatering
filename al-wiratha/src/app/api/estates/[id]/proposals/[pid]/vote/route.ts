@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { requireEstateMember } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
@@ -14,6 +15,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id: estateId, pid: proposalId } = await params;
 
+  const access = await requireEstateMember(estateId, session.userId);
+  if (access instanceof NextResponse) return access;
+  // Voting is restricted to heirs holding an actual share — a share-less
+  // admin observing the estate must not skew weighted results.
+  if (!access.heirShare) {
+    return NextResponse.json(
+      { error: "التصويت متاح للورثة أصحاب الحصص فقط" },
+      { status: 403 }
+    );
+  }
+
   const proposal = await prisma.proposal.findUnique({ where: { id: proposalId } });
   if (!proposal || proposal.estateId !== estateId) {
     return NextResponse.json({ error: "المقترح غير موجود" }, { status: 404 });
@@ -25,11 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "انتهت مدة التصويت" }, { status: 400 });
   }
 
-  // Get voter's share weight
-  const heirShare = await prisma.heirShare.findUnique({
-    where: { estateId_userId: { estateId, userId: session.userId } },
-  });
-  const weight = heirShare?.sharePercentage ?? 1;
+  const weight = access.heirShare.sharePercentage;
 
   try {
     const body = await req.json();

@@ -38,6 +38,8 @@ export default async function EstateDetailPage({ params }: { params: Promise<{ i
 
   const isAdmin = estate.adminId === session.userId;
   const myShare = estate.heirShares.find((h) => h.userId === session.userId);
+  // Same 404 for outsiders as for missing estates — don't leak existence.
+  if (!isAdmin && !myShare) notFound();
   const totalPct = estate.heirShares.reduce((s, h) => s + h.sharePercentage, 0);
   const totalIncome = estate.rentalIncomes.reduce((s, i) => s + i.amount, 0);
   const myIncome = estate.rentalIncomes.reduce((s, i) => {

@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
-
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "al-wiratha-secret-key-fallback"
-);
+import { JWT_SECRET as SECRET } from "@/lib/jwt-secret";
 
 const PUBLIC_PATHS = ["/", "/auth/login", "/auth/register"];
 const API_PUBLIC = ["/api/auth/login", "/api/auth/register"];

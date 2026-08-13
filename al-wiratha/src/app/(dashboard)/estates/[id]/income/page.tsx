@@ -18,6 +18,7 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
   const { id } = use(params);
   const [incomes, setIncomes] = useState<RentalIncome[]>([]);
   const [estateName, setEstateName] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -28,9 +29,11 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
     Promise.all([
       fetch(`/api/estates/${id}/income`).then((r) => r.json()),
       fetch(`/api/estates/${id}`).then((r) => r.json()),
-    ]).then(([incData, estData]) => {
+      fetch(`/api/auth/me`).then((r) => r.json()),
+    ]).then(([incData, estData, meData]) => {
       setIncomes(incData.incomes ?? []);
       setEstateName(estData.estate?.name ?? "");
+      setIsAdmin(!!meData.user?.id && estData.estate?.adminId === meData.user.id);
       setLoading(false);
     });
   }, [id]);
@@ -79,7 +82,8 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
         <p className="text-3xl font-bold text-green-800">{formatCurrency(totalIncome)}</p>
       </div>
 
-      {/* Add form */}
+      {/* Add form — admin only (API enforces this too) */}
+      {isAdmin && (
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="font-bold text-gray-900">تسجيل إيراد جديد</h2>
@@ -126,6 +130,7 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
           </form>
         </div>
       </div>
+      )}
 
       {/* Incomes list */}
       <div className="space-y-3">

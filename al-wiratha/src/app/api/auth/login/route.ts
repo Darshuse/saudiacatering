@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { setSession } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -13,6 +14,11 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const data = schema.parse(body);
+
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    if (!rateLimit(`login:ip:${ip}`, 5, 60_000) || !rateLimit(`login:email:${data.email}`, 10, 15 * 60_000)) {
+      return NextResponse.json({ error: "محاولات كثيرة — حاول مرة أخرى بعد قليل" }, { status: 429 });
+    }
 
     const user = await prisma.user.findUnique({ where: { email: data.email } });
     if (!user) {

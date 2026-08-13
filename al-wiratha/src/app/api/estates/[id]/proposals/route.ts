@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { requireEstateMember } from "@/lib/authz";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
@@ -14,6 +15,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
 
   const { id: estateId } = await params;
+  const access = await requireEstateMember(estateId, session.userId);
+  if (access instanceof NextResponse) return access;
 
   try {
     const body = await req.json();

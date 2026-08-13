@@ -1,9 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "al-wiratha-secret-key-fallback"
-);
+import { JWT_SECRET as SECRET } from "@/lib/jwt-secret";
 
 const COOKIE_NAME = "al-wiratha-token";
 
