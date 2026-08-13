@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", email: "", password: "", phone: "", nationalId: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -22,7 +22,6 @@ export default function RegisterPage() {
         email: form.email,
         password: form.password,
         phone: form.phone || undefined,
-        nationalId: form.nationalId || undefined,
       }),
     });
 
@@ -57,7 +56,6 @@ export default function RegisterPage() {
               { key: "email", label: "البريد الإلكتروني *", type: "email", placeholder: "your@email.com", required: true },
               { key: "password", label: "كلمة المرور *", type: "password", placeholder: "6 أحرف على الأقل", required: true },
               { key: "phone", label: "رقم الجوال", type: "tel", placeholder: "05xxxxxxxx", required: false },
-              { key: "nationalId", label: "رقم الهوية الوطنية", type: "text", placeholder: "1xxxxxxxxx", required: false },
             ].map((field) => (
               <div key={field.key}>
                 <label className="text-sm font-semibold text-gray-700 block mb-1.5">{field.label}</label>
@@ -80,6 +78,10 @@ export default function RegisterPage() {
               {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
               إنشاء الحساب
             </button>
+
+            <p className="text-center text-xs text-gray-400">
+              🔒 بياناتك مشفّرة وآمنة — أقل من دقيقة وتبدأ
+            </p>
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-5">

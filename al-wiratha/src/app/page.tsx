@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { FaqAccordion } from "@/components/ui/faq-accordion";
+import { WhatsAppButton } from "@/components/ui/whatsapp-button";
 
 export default function LandingPage() {
   const features = [
@@ -33,8 +35,8 @@ export default function LandingPage() {
             <Link href="/auth/login" className="text-blue-200 hover:text-white px-4 py-2 rounded-lg font-medium transition-colors">
               دخول
             </Link>
-            <Link href="/auth/register" className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl font-semibold transition-colors shadow-lg">
-              ابدأ مجاناً
+            <Link href="/calculator" className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl font-semibold transition-colors shadow-lg">
+              احسب الأنصبة الآن — مجاناً
             </Link>
           </div>
         </nav>
@@ -51,11 +53,11 @@ export default function LandingPage() {
             منصة متكاملة لإدارة التركات المشتركة — تقسيم الحصص الشرعية، توزيع إيرادات الإيجار تلقائياً، والتصويت على القرارات بشفافية تامة
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
-            <Link href="/auth/register" className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-colors shadow-xl">
-              ابدأ مجاناً الآن ←
+            <Link href="/calculator" className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-colors shadow-xl">
+              احسب الأنصبة الشرعية الآن — مجاناً وبدون تسجيل ←
             </Link>
-            <Link href="/auth/login" className="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-colors border border-white/20">
-              تسجيل الدخول
+            <Link href="/auth/register" className="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-2xl font-bold text-lg transition-colors border border-white/20">
+              أنشئ حساباً لإدارة التركة
             </Link>
           </div>
         </div>
@@ -93,12 +95,44 @@ export default function LandingPage() {
         </div>
       </div>
 
+      {/* How it works */}
+      <div className="bg-white px-8 py-20 border-t border-gray-100">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-3">كيف تعمل المنصة؟</h2>
+          <p className="text-center text-gray-500 mb-12">ثلاث خطوات من الحساب الشرعي إلى الإدارة المشتركة</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { n: "١", title: "احسب الأنصبة الشرعية", desc: "أدخل الورثة (أبناء، زوجات، والدان...) واحصل فوراً على نصيب كل وارث بالكسر الشرعي والنسبة والمبلغ — وفق المذهب الذي تختاره." },
+              { n: "٢", title: "سجّل التركة والعقارات", desc: "أنشئ حساباً مجانياً، أضف العقارات والأصول بقيمها، وادعُ الورثة بحصصهم الموثّقة." },
+              { n: "٣", title: "أديروها معاً بشفافية", desc: "سجّل إيرادات الإيجار فتتوزع تلقائياً بحسب الحصص، وصوّتوا على قرارات البيع والتأجير بوزن نصيب كل وارث." },
+            ].map((step) => (
+              <div key={step.n} className="bg-gray-50 rounded-2xl p-6 border border-gray-200 text-center">
+                <span className="w-12 h-12 rounded-full bg-amber-500 text-white text-xl font-bold flex items-center justify-center mx-auto mb-4">{step.n}</span>
+                <h3 className="font-bold text-gray-900 mb-2">{step.title}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* FAQ */}
+      <div className="bg-gray-50 px-8 py-20">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-3">أسئلة تهمّك قبل أن تبدأ</h2>
+          <p className="text-center text-gray-500 mb-10">إجابات صريحة عن الأسئلة الشرعية والقانونية والأمنية</p>
+          <FaqAccordion />
+        </div>
+      </div>
+
       {/* CTA */}
       <div className="bg-blue-900 text-white px-8 py-16 text-center">
         <h2 className="text-3xl font-bold mb-4">ابدأ في إدارة تركتك اليوم</h2>
-        <p className="text-blue-300 mb-8 max-w-xl mx-auto">انضم لآلاف العائلات التي تثق في منصة الورثة لإدارة تركاتهم بعدل وشفافية</p>
-        <Link href="/auth/register" className="bg-amber-500 hover:bg-amber-600 text-white px-10 py-4 rounded-2xl font-bold text-lg inline-block transition-colors shadow-lg">
-          إنشاء حساب مجاني ←
+        <p className="text-blue-300 mb-8 max-w-xl mx-auto">
+          منصة جديدة نبنيها بشفافية: الحاسبة مجانية بالكامل وبدون تسجيل، وحساباتها تتم على جهازك ولا تغادر متصفحك — جرّبها الآن واحكم بنفسك
+        </p>
+        <Link href="/calculator" className="bg-amber-500 hover:bg-amber-600 text-white px-10 py-4 rounded-2xl font-bold text-lg inline-block transition-colors shadow-lg">
+          جرّب الحاسبة أولاً — ثم أنشئ تركتك مجاناً ←
         </Link>
       </div>
 
@@ -106,6 +140,8 @@ export default function LandingPage() {
         <p>منصة الورثة © 2025 — إدارة التركات وفق أحكام الشريعة الإسلامية</p>
         <p className="text-xs mt-1 text-gray-600">للأغراض التعليمية — يُنصح بالرجوع للجهات الشرعية المختصة</p>
       </footer>
+
+      <WhatsAppButton />
     </div>
   );
 }

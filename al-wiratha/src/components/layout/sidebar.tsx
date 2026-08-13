@@ -19,7 +19,7 @@ export function Sidebar({ userName }: { userName: string }) {
   }
 
   return (
-    <aside className="w-64 bg-blue-900 text-white flex flex-col h-full fixed top-0 right-0 z-40 shadow-xl">
+    <aside className="hidden lg:flex w-64 bg-blue-900 text-white flex-col h-full fixed top-0 right-0 z-40 shadow-xl">
       {/* Logo */}
       <div className="px-6 py-6 border-b border-blue-800">
         <div className="flex items-center gap-3">
