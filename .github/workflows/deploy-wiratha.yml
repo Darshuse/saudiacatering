@@ -1,0 +1,27 @@
+name: نشر منصة الورثة على waratha.app
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/al-wiratha-platform-puneqz]
+    paths: ["al-wiratha/**"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: النشر عبر SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script_stop: true
+          script: |
+            cd "${{ secrets.SERVER_APP_DIR }}"
+            git fetch origin claude/al-wiratha-platform-puneqz
+            git checkout claude/al-wiratha-platform-puneqz
+            git pull origin claude/al-wiratha-platform-puneqz
+            cd al-wiratha
+            docker compose -f docker-compose.wiratha.yml up -d --build
+            docker image prune -f
