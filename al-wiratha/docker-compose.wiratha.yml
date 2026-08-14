@@ -1,0 +1,23 @@
+# منصة الورثة — النسخة الجديدة
+# التشغيل: docker compose -f docker-compose.wiratha.yml up -d --build
+services:
+  wiratha:
+    build: .
+    container_name: wiratha-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      # إلزامي — ضعه في ملف .env بجوار هذا الملف؛ التطبيق يرفض الإقلاع بدونه
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET مطلوب في ملف .env}
+      DATABASE_URL: file:/app/data/waratha.db
+      NEXT_PUBLIC_SITE_URL: https://waratha.app
+      # اختياري: رقم واتساب ثابت (وإلا يُستخدم رقم أقدم مستخدم مسجّل)
+      WHATSAPP_NUMBER: ${WHATSAPP_NUMBER:-}
+    volumes:
+      # قاعدة البيانات على قرص دائم — تنجو من إعادة البناء والتحديثات
+      - wiratha_data:/app/data
+
+volumes:
+  wiratha_data:
