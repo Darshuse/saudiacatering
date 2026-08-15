@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { JWT_SECRET as SECRET } from "@/lib/jwt-secret";
 
-const PUBLIC_PATHS = ["/", "/auth/login", "/auth/register", "/calculator", "/sitemap.xml", "/robots.txt"];
-const API_PUBLIC = ["/api/auth/login", "/api/auth/register", "/api/track"];
+const PUBLIC_PATHS = ["/", "/auth/login", "/auth/register", "/auth/accept-invite", "/calculator", "/sitemap.xml", "/robots.txt"];
+const API_PUBLIC = ["/api/auth/login", "/api/auth/register", "/api/auth/accept-invite", "/api/track"];
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;

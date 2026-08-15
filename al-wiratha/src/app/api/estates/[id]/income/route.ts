@@ -47,36 +47,40 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const body = await req.json();
     const data = schema.parse(body);
 
-    const income = await prisma.rentalIncome.create({
-      data: {
-        estateId,
-        amount: data.amount,
-        period: data.period,
-        date: new Date(data.date),
-        description: data.description,
-        collectedById: session.userId,
-        status: "PENDING",
-      },
-    });
-
-    // Auto-distribute based on heir shares
-    const heirShares = await prisma.heirShare.findMany({
-      where: { estateId },
-      include: { user: true },
-    });
-
-    if (heirShares.length > 0) {
-      const distributions = heirShares.map((share) => ({
-        rentalIncomeId: income.id,
-        userId: share.userId,
-        amount: (share.sharePercentage / 100) * data.amount,
-        sharePercentage: share.sharePercentage,
-        status: "PENDING" as const,
-      }));
-
-      await prisma.distribution.createMany({ data: distributions });
-      await prisma.rentalIncome.update({ where: { id: income.id }, data: { status: "DISTRIBUTED" } });
+    // Distribution requires the full sharia allocation — otherwise part of the
+    // money silently belongs to no one.
+    const heirShares = await prisma.heirShare.findMany({ where: { estateId } });
+    const totalPct = heirShares.reduce((s, h) => s + h.sharePercentage, 0);
+    if (heirShares.length === 0 || totalPct < 99.95) {
+      return NextResponse.json({
+        error: `لا يمكن تسجيل إيراد قبل اكتمال توزيع الحصص (100%) — الموزّع حالياً: ${totalPct.toFixed(2)}%`,
+      }, { status: 400 });
     }
+
+    // Atomic: income + its distributions succeed or fail together.
+    const income = await prisma.$transaction(async (tx) => {
+      const created = await tx.rentalIncome.create({
+        data: {
+          estateId,
+          amount: data.amount,
+          period: data.period,
+          date: new Date(data.date),
+          description: data.description,
+          collectedById: session.userId,
+          status: "DISTRIBUTED",
+        },
+      });
+      await tx.distribution.createMany({
+        data: heirShares.map((share) => ({
+          rentalIncomeId: created.id,
+          userId: share.userId,
+          amount: (share.sharePercentage / 100) * data.amount,
+          sharePercentage: share.sharePercentage,
+          status: "PENDING" as const,
+        })),
+      });
+      return created;
+    });
 
     return NextResponse.json({ income }, { status: 201 });
   } catch (err) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { requireEstateMember, requireEstateAdmin } from "@/lib/authz";
+import { closeExpiredProposals } from "@/lib/proposals";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
@@ -11,6 +12,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const access = await requireEstateMember(id, session.userId);
   if (access instanceof NextResponse) return access;
+
+  await closeExpiredProposals({ estateId: id });
 
   const estate = await prisma.estate.findUnique({
     where: { id },

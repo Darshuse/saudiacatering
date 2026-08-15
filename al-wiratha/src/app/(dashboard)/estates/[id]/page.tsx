@@ -10,7 +10,10 @@ export default async function EstateDetailPage({ params }: { params: Promise<{ i
   if (!session) return null;
 
   const { id } = await params;
-  const estate = await prisma.estate.findUnique({
+  // Totals must come from aggregates over ALL incomes — the estate query
+  // below fetches only the 5 most recent for display.
+  const [estate, incomeAgg, myDistAgg] = await Promise.all([
+    prisma.estate.findUnique({
     where: { id },
     include: {
       admin: { select: { id: true, name: true } },
@@ -32,7 +35,13 @@ export default async function EstateDetailPage({ params }: { params: Promise<{ i
         take: 5,
       },
     },
-  });
+    }),
+    prisma.rentalIncome.aggregate({ where: { estateId: id }, _sum: { amount: true } }),
+    prisma.distribution.aggregate({
+      where: { rentalIncome: { estateId: id }, userId: session.userId },
+      _sum: { amount: true },
+    }),
+  ]);
 
   if (!estate) notFound();
 
@@ -41,11 +50,8 @@ export default async function EstateDetailPage({ params }: { params: Promise<{ i
   // Same 404 for outsiders as for missing estates — don't leak existence.
   if (!isAdmin && !myShare) notFound();
   const totalPct = estate.heirShares.reduce((s, h) => s + h.sharePercentage, 0);
-  const totalIncome = estate.rentalIncomes.reduce((s, i) => s + i.amount, 0);
-  const myIncome = estate.rentalIncomes.reduce((s, i) => {
-    const d = i.distributions.find((d) => d.userId === session.userId);
-    return s + (d?.amount ?? 0);
-  }, 0);
+  const totalIncome = incomeAgg._sum.amount ?? 0;
+  const myIncome = myDistAgg._sum.amount ?? 0;
 
   const statusBadge = estate.status === "ACTIVE" ? "success" : estate.status === "SOLD" ? "gray" : "warning";
 
@@ -190,10 +196,10 @@ export default async function EstateDetailPage({ params }: { params: Promise<{ i
       {/* Quick Actions */}
       <div className="flex gap-3 flex-wrap">
         <Link href={`/estates/${id}/heirs`} className="bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-blue-800 transition-colors">
-          👥 إدارة الورثة
+          👥 {isAdmin ? "إدارة الورثة" : "عرض الورثة"}
         </Link>
         <Link href={`/estates/${id}/income`} className="bg-green-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-green-800 transition-colors">
-          💰 تسجيل إيراد
+          💰 {isAdmin ? "تسجيل إيراد" : "عرض الإيرادات"}
         </Link>
         <Link href={`/estates/${id}/votes`} className="bg-purple-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-purple-800 transition-colors">
           🗳️ التصويتات

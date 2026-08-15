@@ -23,6 +23,7 @@ model User {
   proposals      Proposal[]
   votes          Vote[]
   createdIncomes RentalIncome[] @relation("IncomeCollector")
+  heirInvites    HeirInvite[]
 }
 
 enum Role {
@@ -47,6 +48,7 @@ model Estate {
   heirShares    HeirShare[]
   rentalIncomes RentalIncome[]
   proposals     Proposal[]
+  heirInvites   HeirInvite[]
 }
 
 enum EstateType {
@@ -111,7 +113,7 @@ model Distribution {
   paidAt          DateTime?
   createdAt       DateTime           @default(now())
 
-  rentalIncome RentalIncome @relation(fields: [rentalIncomeId], references: [id])
+  rentalIncome RentalIncome @relation(fields: [rentalIncomeId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id])
 }
 
@@ -151,7 +153,7 @@ model Vote {
   weight     Float
   createdAt  DateTime   @default(now())
 
-  proposal Proposal @relation(fields: [proposalId], references: [id])
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id])
 
   @@unique([proposalId, userId])
@@ -161,6 +163,21 @@ enum VoteChoice {
   YES
   NO
   ABSTAIN
+}
+
+model HeirInvite {
+  id         String    @id @default(cuid())
+  token      String    @unique
+  userId     String
+  estateId   String
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  acceptedAt DateTime?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  estate Estate @relation(fields: [estateId], references: [id], onDelete: Cascade)
+
+  @@index([userId, estateId])
 }
 
 model AnalyticsEvent {

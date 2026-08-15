@@ -1,11 +1,22 @@
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { closeExpiredProposals } from "@/lib/proposals";
 import { formatCurrency, formatDate, estateTypeLabel } from "@/lib/utils";
 import Link from "next/link";
 
 export default async function DashboardPage() {
   const session = await getSession();
   if (!session) return null;
+
+  // Settle any expired-but-open proposals before showing "تصويتات مفتوحة".
+  await closeExpiredProposals({
+    estate: {
+      OR: [
+        { adminId: session.userId },
+        { heirShares: { some: { userId: session.userId } } },
+      ],
+    },
+  });
 
   const [estates, distributions, recentVotes, oldestUser] = await Promise.all([
     prisma.estate.findMany({

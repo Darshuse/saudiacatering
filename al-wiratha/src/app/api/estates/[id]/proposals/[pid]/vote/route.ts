@@ -43,25 +43,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const body = await req.json();
     const data = schema.parse(body);
 
-    const vote = await prisma.vote.upsert({
-      where: { proposalId_userId: { proposalId, userId: session.userId } },
-      update: { choice: data.choice, comment: data.comment, weight },
-      create: { proposalId, userId: session.userId, choice: data.choice, comment: data.comment, weight },
-      include: { user: { select: { id: true, name: true } } },
-    });
-
-    // Check if all heirs voted → auto-close if deadline passed
-    const totalHeirs = await prisma.heirShare.count({ where: { estateId } });
-    const totalVotes = await prisma.vote.count({ where: { proposalId } });
-    if (totalVotes >= totalHeirs) {
-      const votes = await prisma.vote.findMany({ where: { proposalId } });
-      const yesWeight = votes.filter((v) => v.choice === "YES").reduce((s, v) => s + v.weight, 0);
-      const noWeight = votes.filter((v) => v.choice === "NO").reduce((s, v) => s + v.weight, 0);
-      await prisma.proposal.update({
-        where: { id: proposalId },
-        data: { status: yesWeight > noWeight ? "APPROVED" : "REJECTED" },
+    // Atomic: the vote and the potential auto-close read the same snapshot.
+    const vote = await prisma.$transaction(async (tx) => {
+      const v = await tx.vote.upsert({
+        where: { proposalId_userId: { proposalId, userId: session.userId } },
+        update: { choice: data.choice, comment: data.comment, weight },
+        create: { proposalId, userId: session.userId, choice: data.choice, comment: data.comment, weight },
+        include: { user: { select: { id: true, name: true } } },
       });
-    }
+
+      // All heirs voted → close early.
+      // سياسة الحسم: الأعلى وزناً يفوز — التعادل = مغلق دون حسم (CLOSED).
+      const totalHeirs = await tx.heirShare.count({ where: { estateId } });
+      const totalVotes = await tx.vote.count({ where: { proposalId } });
+      if (totalVotes >= totalHeirs) {
+        const votes = await tx.vote.findMany({ where: { proposalId } });
+        const yesWeight = votes.filter((x) => x.choice === "YES").reduce((s, x) => s + x.weight, 0);
+        const noWeight = votes.filter((x) => x.choice === "NO").reduce((s, x) => s + x.weight, 0);
+        await tx.proposal.update({
+          where: { id: proposalId },
+          data: { status: yesWeight > noWeight ? "APPROVED" : noWeight > yesWeight ? "REJECTED" : "CLOSED" },
+        });
+      }
+      return v;
+    });
 
     return NextResponse.json({ vote });
   } catch (err) {

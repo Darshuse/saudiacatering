@@ -7,7 +7,10 @@ import { z } from "zod";
 const schema = z.object({
   title: z.string().min(3, "العنوان يجب أن يكون 3 أحرف على الأقل"),
   description: z.string().min(10, "الوصف يجب أن يكون 10 أحرف على الأقل"),
-  deadline: z.string(),
+  deadline: z.string().refine((s) => {
+    const d = Date.parse(s);
+    return !isNaN(d) && d > Date.now();
+  }, "موعد انتهاء التصويت يجب أن يكون تاريخاً صالحاً في المستقبل"),
 });
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
