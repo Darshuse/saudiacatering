@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 const items = [
   { href: "/dashboard", label: "الرئيسية", icon: "🏠" },
   { href: "/estates", label: "العقارات", icon: "🏢" },
+  { href: "/statement", label: "كشفي", icon: "📄" },
   { href: "/inheritance-calculator", label: "الحاسبة", icon: "⚖️" },
   { href: "/profile", label: "الملف", icon: "👤" },
 ];
@@ -14,7 +15,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200 grid grid-cols-4 pb-[env(safe-area-inset-bottom)]">
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200 grid grid-cols-5 pb-[env(safe-area-inset-bottom)]">
       {items.map((item) => {
         const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
         return (

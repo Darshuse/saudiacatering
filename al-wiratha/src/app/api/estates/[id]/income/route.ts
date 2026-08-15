@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { requireEstateMember, requireEstateAdmin } from "@/lib/authz";
+import { riyalsToHalalas, distributeHalalas } from "@/lib/money";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
@@ -57,12 +58,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }, { status: 400 });
     }
 
+    // Exact money: halalas + largest-remainder over the sharia fractions —
+    // the distributed sum always equals the income to the last halala.
+    const totalHalalas = riyalsToHalalas(data.amount);
+    const amounts = distributeHalalas(totalHalalas, heirShares);
+
     // Atomic: income + its distributions succeed or fail together.
     const income = await prisma.$transaction(async (tx) => {
       const created = await tx.rentalIncome.create({
         data: {
           estateId,
-          amount: data.amount,
+          amount: totalHalalas,
           period: data.period,
           date: new Date(data.date),
           description: data.description,
@@ -71,10 +77,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         },
       });
       await tx.distribution.createMany({
-        data: heirShares.map((share) => ({
+        data: heirShares.map((share, i) => ({
           rentalIncomeId: created.id,
           userId: share.userId,
-          amount: (share.sharePercentage / 100) * data.amount,
+          amount: amounts[i],
           sharePercentage: share.sharePercentage,
           status: "PENDING" as const,
         })),

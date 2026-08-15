@@ -84,7 +84,8 @@ export default async function DashboardPage() {
     const share = e.heirShares.find((h) => h.userId === session.userId);
     return s + (e.value ?? 0) * ((share?.sharePercentage ?? 0) / 100);
   }, 0);
-  const pendingAmount = distributions.reduce((s, d) => s + d.amount, 0);
+  // Distribution amounts are stored in halalas — convert for display.
+  const pendingAmount = distributions.reduce((s, d) => s + d.amount, 0) / 100;
 
   return (
     <div className="space-y-8">
@@ -227,23 +228,24 @@ export default async function DashboardPage() {
 
           {/* Pending distributions */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-            <div className="px-6 py-4 border-b border-gray-100">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <h2 className="font-bold text-gray-900">مستحقاتي المعلقة</h2>
+              <Link href="/statement" className="text-sm text-blue-600 hover:underline">كشف حسابي</Link>
             </div>
             <div className="divide-y divide-gray-50">
               {distributions.length === 0 ? (
                 <p className="px-6 py-4 text-sm text-gray-400">لا توجد مستحقات معلقة</p>
               ) : (
                 distributions.map((d) => (
-                  <div key={d.id} className="px-6 py-3">
+                  <Link key={d.id} href="/statement" className="block px-6 py-3 hover:bg-gray-50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-800">{d.rentalIncome.estate.name}</p>
                         <p className="text-xs text-gray-400">{d.rentalIncome.period}</p>
                       </div>
-                      <span className="font-bold text-green-700">{formatCurrency(d.amount)}</span>
+                      <span className="font-bold text-green-700">{formatCurrency(d.amount / 100)}</span>
                     </div>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/dashboard", label: "الرئيسية", icon: "🏠" },
   { href: "/estates", label: "العقارات والتركات", icon: "🏢" },
+  { href: "/statement", label: "كشف حسابي", icon: "📄" },
   { href: "/inheritance-calculator", label: "حاسبة المواريث", icon: "⚖️" },
 ];
 

@@ -6,6 +6,7 @@ import Link from "next/link";
 
 interface Vote { id: string; choice: string; comment?: string; weight: number; user: { id: string; name: string } }
 interface Proposal { id: string; title: string; description: string; deadline: string; status: string; createdBy: { name: string }; votes: Vote[]; estateId: string }
+interface HeirShare { sharePercentage: number; user: { id: string; name: string } }
 
 function formatDate(d: string) {
   return new Intl.DateTimeFormat("ar-SA", { year: "numeric", month: "long", day: "numeric" }).format(new Date(d));
@@ -22,6 +23,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function VotesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [heirShares, setHeirShares] = useState<HeirShare[]>([]);
   const [estateName, setEstateName] = useState("");
   const [currentUserId, setCurrentUserId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -37,6 +39,7 @@ export default function VotesPage({ params }: { params: Promise<{ id: string }> 
       fetch("/api/auth/me").then((r) => r.json()),
     ]).then(([estData, meData]) => {
       setProposals(estData.estate?.proposals ?? []);
+      setHeirShares(estData.estate?.heirShares ?? []);
       setEstateName(estData.estate?.name ?? "");
       setCurrentUserId(meData.user?.id ?? "");
       setLoading(false);
@@ -81,6 +84,8 @@ export default function VotesPage({ params }: { params: Promise<{ id: string }> 
 
   if (loading) return <div className="text-center py-12 text-gray-400">جاري التحميل...</div>;
 
+  const myShare = heirShares.find((h) => h.user.id === currentUserId);
+
   return (
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center justify-between">
@@ -91,6 +96,13 @@ export default function VotesPage({ params }: { params: Promise<{ id: string }> 
         <Button onClick={() => setShowForm(!showForm)} variant="primary">
           + مقترح جديد
         </Button>
+      </div>
+
+      {/* Weight explainer — the single most misunderstood thing in weighted voting */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 text-sm text-blue-800">
+        ⚖️ <strong>كيف يُحسم التصويت؟</strong> وزن كل صوت = الحصة الشرعية لصاحبه
+        {myShare ? <> — وزن صوتك أنت: <strong>{myShare.sharePercentage.toFixed(2)}%</strong></> : <> — لا تملك حصة في هذا العقار فلا يحق لك التصويت</>}
+        . الأعلى وزناً يفوز، والتعادل يعني إغلاق المقترح دون حسم.
       </div>
 
       {/* Create form */}
@@ -147,8 +159,13 @@ export default function VotesPage({ params }: { params: Promise<{ id: string }> 
             const abstainVotes = proposal.votes.filter((v) => v.choice === "ABSTAIN");
             const yesWeight = yesVotes.reduce((s, v) => s + v.weight, 0);
             const noWeight = noVotes.reduce((s, v) => s + v.weight, 0);
+            const abstainWeight = abstainVotes.reduce((s, v) => s + v.weight, 0);
             const totalWeight = proposal.votes.reduce((s, v) => s + v.weight, 0);
             const isOpen = proposal.status === "OPEN" && new Date() < new Date(proposal.deadline);
+            const daysLeft = Math.ceil((new Date(proposal.deadline).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+            const votedIds = new Set(proposal.votes.map((v) => v.user.id));
+            const notVoted = heirShares.filter((h) => !votedIds.has(h.user.id));
+            const choiceLabel: Record<string, string> = { YES: "✅ موافق", NO: "❌ رافض", ABSTAIN: "⬜ ممتنع" };
 
             return (
               <div key={proposal.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -156,7 +173,14 @@ export default function VotesPage({ params }: { params: Promise<{ id: string }> 
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex-1">
                       <h3 className="font-bold text-gray-900 text-lg">{proposal.title}</h3>
-                      <p className="text-sm text-gray-500 mt-1">بقلم: {proposal.createdBy.name} • حتى {formatDate(proposal.deadline)}</p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        بقلم: {proposal.createdBy.name} • حتى {formatDate(proposal.deadline)}
+                        {isOpen && daysLeft > 0 && (
+                          <span className={`mr-2 font-bold ${daysLeft <= 3 ? "text-red-600" : "text-blue-600"}`}>
+                            ⏳ باقي {daysLeft} {daysLeft === 1 ? "يوم" : daysLeft === 2 ? "يومان" : daysLeft <= 10 ? "أيام" : "يوماً"}
+                          </span>
+                        )}
+                      </p>
                     </div>
                     <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${STATUS_COLORS[proposal.status]}`}>
                       {STATUS_LABELS[proposal.status]}
@@ -183,9 +207,34 @@ export default function VotesPage({ params }: { params: Promise<{ id: string }> 
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-gray-400 w-8">⬜ {abstainVotes.length}</span>
-                        <div className="flex-1 h-2 bg-gray-100 rounded-full" />
-                        <span className="text-xs text-gray-400 w-12"></span>
+                        <div className="flex-1 h-2 bg-gray-100 rounded-full">
+                          <div className="h-full bg-gray-300 rounded-full" style={{ width: totalWeight > 0 ? `${(abstainWeight / totalWeight) * 100}%` : "0%" }} />
+                        </div>
+                        <span className="text-xs text-gray-400 w-12">{totalWeight > 0 ? ((abstainWeight / totalWeight) * 100).toFixed(0) : 0}%</span>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Public voter list — transparency is the product */}
+                  {(proposal.votes.length > 0 || notVoted.length > 0) && (
+                    <div className="mb-4 bg-gray-50 rounded-lg px-4 py-3 space-y-1.5">
+                      {proposal.votes.map((v) => (
+                        <div key={v.id} className="flex items-center justify-between text-sm">
+                          <span className="text-gray-700">
+                            {v.user.name}
+                            <span className="text-xs text-gray-400 mr-1">({v.weight.toFixed(1)}%)</span>
+                          </span>
+                          <span className="text-gray-600">
+                            {choiceLabel[v.choice] ?? v.choice}
+                            {v.comment && <span className="text-xs text-gray-400 mr-2">— {v.comment}</span>}
+                          </span>
+                        </div>
+                      ))}
+                      {notVoted.length > 0 && proposal.status === "OPEN" && (
+                        <p className="text-xs text-amber-700 pt-1 border-t border-gray-200">
+                          لم يصوّت بعد: {notVoted.map((h) => h.user.name).join("، ")}
+                        </p>
+                      )}
                     </div>
                   )}
 

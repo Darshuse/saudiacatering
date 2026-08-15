@@ -2,7 +2,30 @@
 import { useState, useEffect, use } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { gcd, lcm } from "@/lib/utils";
 import Link from "next/link";
+
+// الأنصبة الشرعية الستة المقدّرة — لغة المستخدم، لا «بسط ومقام»
+const SHARE_PRESETS = [
+  { label: "النصف ½", n: 1, d: 2 },
+  { label: "الثلثان ⅔", n: 2, d: 3 },
+  { label: "الثلث ⅓", n: 1, d: 3 },
+  { label: "الربع ¼", n: 1, d: 4 },
+  { label: "السدس ⅙", n: 1, d: 6 },
+  { label: "الثمن ⅛", n: 1, d: 8 },
+];
+
+/** Exact remaining fraction of the estate (null if fully allocated). */
+function remainingFraction(shares: { shareNumerator: number; shareDenominator: number }[]) {
+  if (shares.length === 0) return { n: 1, d: 1 };
+  let L = 1;
+  for (const s of shares) L = lcm(L, s.shareDenominator);
+  const used = shares.reduce((sum, s) => sum + s.shareNumerator * (L / s.shareDenominator), 0);
+  const rem = L - used;
+  if (rem <= 0) return null;
+  const g = gcd(rem, L);
+  return { n: rem / g, d: L / g };
+}
 
 interface HeirShare {
   id: string;
@@ -228,23 +251,59 @@ export default function HeirsPage({ params }: { params: Promise<{ id: string }> 
               onChange={(e) => setForm((f) => ({ ...f, relation: e.target.value }))}
               placeholder="مثال: ابن، بنت، زوجة، أخ..."
             />
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="البسط (صورة الكسر)"
-                id="num"
-                type="number"
-                min="1"
-                value={form.shareNumerator}
-                onChange={(e) => setForm((f) => ({ ...f, shareNumerator: e.target.value }))}
-              />
-              <Input
-                label="المقام (مقام الكسر)"
-                id="den"
-                type="number"
-                min="1"
-                value={form.shareDenominator}
-                onChange={(e) => setForm((f) => ({ ...f, shareDenominator: e.target.value }))}
-              />
+            <div>
+              <label className="text-sm font-semibold text-gray-700 block mb-2">الحصة الشرعية</label>
+              <div className="flex gap-2 flex-wrap mb-3">
+                {SHARE_PRESETS.map((p) => {
+                  const active = form.shareNumerator === String(p.n) && form.shareDenominator === String(p.d);
+                  return (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, shareNumerator: String(p.n), shareDenominator: String(p.d) }))}
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold border-2 transition-all ${active ? "border-blue-600 bg-blue-50 text-blue-800" : "border-gray-200 text-gray-600 hover:border-gray-300"}`}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
+                {(() => {
+                  const rem = remainingFraction(estate.heirShares);
+                  if (!rem || rem.d === 1) return null;
+                  const active = form.shareNumerator === String(rem.n) && form.shareDenominator === String(rem.d);
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, shareNumerator: String(rem.n), shareDenominator: String(rem.d) }))}
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold border-2 transition-all ${active ? "border-green-600 bg-green-50 text-green-800" : "border-green-300 text-green-700 hover:border-green-400"}`}
+                    >
+                      الباقي ({rem.n}/{rem.d})
+                    </button>
+                  );
+                })()}
+              </div>
+              <p className="text-xs text-gray-400 mb-2">أو أدخل الكسر يدوياً (لحالات التعصيب والعول):</p>
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="البسط"
+                  id="num"
+                  type="number"
+                  min="1"
+                  value={form.shareNumerator}
+                  onChange={(e) => setForm((f) => ({ ...f, shareNumerator: e.target.value }))}
+                />
+                <Input
+                  label="المقام"
+                  id="den"
+                  type="number"
+                  min="1"
+                  value={form.shareDenominator}
+                  onChange={(e) => setForm((f) => ({ ...f, shareDenominator: e.target.value }))}
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                غير متأكد من الأنصبة؟ <Link href="/inheritance-calculator" className="text-blue-600 hover:underline">احسبها بحاسبة المواريث ←</Link>
+              </p>
             </div>
             {form.shareNumerator && form.shareDenominator && (
               <div className="bg-gray-50 rounded-lg px-4 py-3 text-sm text-gray-600">

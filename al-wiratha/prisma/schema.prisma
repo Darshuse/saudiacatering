@@ -85,7 +85,8 @@ model HeirShare {
 model RentalIncome {
   id            String       @id @default(cuid())
   estateId      String
-  amount        Float
+  // Halalas (integer) — never store money as floats
+  amount        Int
   period        String
   date          DateTime
   description   String?
@@ -107,10 +108,12 @@ model Distribution {
   id              String             @id @default(cuid())
   rentalIncomeId  String
   userId          String
-  amount          Float
+  // Halalas (integer) — never store money as floats
+  amount          Int
   sharePercentage Float
   status          DistributionStatus @default(PENDING)
   paidAt          DateTime?
+  paymentRef      String?
   createdAt       DateTime           @default(now())
 
   rentalIncome RentalIncome @relation(fields: [rentalIncomeId], references: [id], onDelete: Cascade)

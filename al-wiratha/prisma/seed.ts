@@ -61,11 +61,12 @@ async function main() {
     ],
   });
 
-  // Add rental incomes
+  // Add rental incomes — amounts in halalas (30,000 SAR = 3,000,000 halalas)
+  // Exact fractions: 2/6 + 1/6 + 2/6 + 1/6 of 3,000,000 sums to the last halala.
   const income1 = await prisma.rentalIncome.create({
     data: {
       estateId: estate.id,
-      amount: 30000,
+      amount: 3_000_000,
       period: "يناير 2025",
       date: new Date("2025-01-05"),
       description: "إيجار الطوابق السكنية",
@@ -76,10 +77,10 @@ async function main() {
 
   await prisma.distribution.createMany({
     data: [
-      { rentalIncomeId: income1.id, userId: admin.id, amount: 9999, sharePercentage: 33.33, status: "PENDING" },
-      { rentalIncomeId: income1.id, userId: heir1.id, amount: 5001, sharePercentage: 16.67, status: "PAID", paidAt: new Date() },
-      { rentalIncomeId: income1.id, userId: heir2.id, amount: 9999, sharePercentage: 33.33, status: "PENDING" },
-      { rentalIncomeId: income1.id, userId: heir3.id, amount: 5001, sharePercentage: 16.67, status: "PAID", paidAt: new Date() },
+      { rentalIncomeId: income1.id, userId: admin.id, amount: 1_000_000, sharePercentage: 33.33, status: "PENDING" },
+      { rentalIncomeId: income1.id, userId: heir1.id, amount: 500_000, sharePercentage: 16.67, status: "PAID", paidAt: new Date() },
+      { rentalIncomeId: income1.id, userId: heir2.id, amount: 1_000_000, sharePercentage: 33.33, status: "PENDING" },
+      { rentalIncomeId: income1.id, userId: heir3.id, amount: 500_000, sharePercentage: 16.67, status: "PAID", paidAt: new Date() },
     ],
   });
 

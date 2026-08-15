@@ -50,8 +50,9 @@ export default async function EstateDetailPage({ params }: { params: Promise<{ i
   // Same 404 for outsiders as for missing estates — don't leak existence.
   if (!isAdmin && !myShare) notFound();
   const totalPct = estate.heirShares.reduce((s, h) => s + h.sharePercentage, 0);
-  const totalIncome = incomeAgg._sum.amount ?? 0;
-  const myIncome = myDistAgg._sum.amount ?? 0;
+  // Amounts are stored in halalas — convert for display.
+  const totalIncome = (incomeAgg._sum.amount ?? 0) / 100;
+  const myIncome = (myDistAgg._sum.amount ?? 0) / 100;
 
   const statusBadge = estate.status === "ACTIVE" ? "success" : estate.status === "SOLD" ? "gray" : "warning";
 
@@ -151,7 +152,7 @@ export default async function EstateDetailPage({ params }: { params: Promise<{ i
                       <p className="text-xs text-gray-400">{formatDate(income.date)}</p>
                     </div>
                     <div className="text-left">
-                      <p className="text-sm font-bold text-green-700">{formatCurrency(income.amount)}</p>
+                      <p className="text-sm font-bold text-green-700">{formatCurrency(income.amount / 100)}</p>
                       <Badge variant={income.status === "DISTRIBUTED" ? "success" : "warning"} className="text-xs">
                         {income.status === "DISTRIBUTED" ? "موزع" : "معلق"}
                       </Badge>
