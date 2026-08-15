@@ -8,3 +8,4 @@ dev.db
 frontend
 backend
 docker-compose.yml
+uploads

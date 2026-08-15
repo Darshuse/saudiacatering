@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { requireEstateMember } from "@/lib/authz";
+import { logActivity } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
@@ -67,6 +68,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
       return v;
     });
+
+    logActivity(estateId, session.userId, "vote_cast", proposal.title);
 
     return NextResponse.json({ vote });
   } catch (err) {

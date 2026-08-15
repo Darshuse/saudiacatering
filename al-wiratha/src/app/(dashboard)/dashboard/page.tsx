@@ -2,6 +2,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { closeExpiredProposals } from "@/lib/proposals";
 import { formatCurrency, formatDate, estateTypeLabel } from "@/lib/utils";
+import { NotificationsCard } from "@/components/dashboard/notifications-card";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -21,6 +22,7 @@ export default async function DashboardPage() {
   const [estates, distributions, recentVotes, oldestUser] = await Promise.all([
     prisma.estate.findMany({
       where: {
+        status: { not: "ARCHIVED" },
         OR: [
           { adminId: session.userId },
           { heirShares: { some: { userId: session.userId } } },
@@ -101,6 +103,8 @@ export default async function DashboardPage() {
           </Link>
         )}
       </div>
+
+      <NotificationsCard />
 
       {/* Onboarding — a stressed new user needs to be told exactly what to do next */}
       {showOnboarding && (

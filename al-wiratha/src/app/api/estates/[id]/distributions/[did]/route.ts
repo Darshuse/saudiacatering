@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { requireEstateAdmin } from "@/lib/authz";
+import { logActivity } from "@/lib/audit";
+import { notifyUsers } from "@/lib/notify";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
@@ -42,6 +44,11 @@ export async function PATCH(
         : { status: "PENDING", paidAt: null, paymentRef: null },
       include: { user: { select: { id: true, name: true } } },
     });
+
+    logActivity(estateId, session.userId, data.paid ? "distribution_paid" : "distribution_unpaid", updated.user.name);
+    if (data.paid) {
+      notifyUsers([updated.userId], "✓ تم تحويل مستحقاتك — اطّلع على كشف حسابك", "/statement", session.userId);
+    }
 
     return NextResponse.json({ distribution: updated });
   } catch (err) {

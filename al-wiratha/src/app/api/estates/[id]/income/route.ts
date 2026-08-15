@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { requireEstateMember, requireEstateAdmin } from "@/lib/authz";
 import { riyalsToHalalas, distributeHalalas } from "@/lib/money";
+import { logActivity } from "@/lib/audit";
+import { notifyUsers } from "@/lib/notify";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
@@ -87,6 +89,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
       return created;
     });
+
+    logActivity(estateId, session.userId, "income_recorded", `${data.period} — ${data.amount} ريال`);
+    notifyUsers(
+      heirShares.map((h) => h.userId),
+      `إيراد جديد (${data.period}) وُزّع تلقائياً — اطّلع على نصيبك`,
+      `/estates/${estateId}/income`,
+      session.userId
+    );
 
     return NextResponse.json({ income }, { status: 201 });
   } catch (err) {

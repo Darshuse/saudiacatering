@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { requireEstateMember } from "@/lib/authz";
+import { logActivity } from "@/lib/audit";
+import { notifyUsers, estateMemberIds } from "@/lib/notify";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
@@ -39,6 +41,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         votes: true,
       },
     });
+
+    logActivity(estateId, session.userId, "proposal_created", data.title);
+    estateMemberIds(estateId).then((ids) =>
+      notifyUsers(ids, `🗳️ تصويت جديد: «${data.title}» — أدلِ بصوتك`, `/estates/${estateId}/votes`, session.userId)
+    );
 
     return NextResponse.json({ proposal }, { status: 201 });
   } catch (err) {

@@ -1,9 +1,12 @@
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatCurrency, formatDate, estateTypeLabel, estateStatusLabel } from "@/lib/utils";
+import { ACTIVITY_LABELS } from "@/lib/audit";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { DocumentsCard } from "@/components/estate/documents-card";
+import { ArchiveButton } from "@/components/estate/archive-button";
 
 export default async function EstateDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -12,7 +15,7 @@ export default async function EstateDetailPage({ params }: { params: Promise<{ i
   const { id } = await params;
   // Totals must come from aggregates over ALL incomes — the estate query
   // below fetches only the 5 most recent for display.
-  const [estate, incomeAgg, myDistAgg] = await Promise.all([
+  const [estate, incomeAgg, myDistAgg, expenseAgg, activity] = await Promise.all([
     prisma.estate.findUnique({
     where: { id },
     include: {
@@ -41,6 +44,13 @@ export default async function EstateDetailPage({ params }: { params: Promise<{ i
       where: { rentalIncome: { estateId: id }, userId: session.userId },
       _sum: { amount: true },
     }),
+    prisma.expense.aggregate({ where: { estateId: id }, _sum: { amount: true } }),
+    prisma.activityLog.findMany({
+      where: { estateId: id },
+      include: { user: { select: { name: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+    }),
   ]);
 
   if (!estate) notFound();
@@ -53,6 +63,8 @@ export default async function EstateDetailPage({ params }: { params: Promise<{ i
   // Amounts are stored in halalas — convert for display.
   const totalIncome = (incomeAgg._sum.amount ?? 0) / 100;
   const myIncome = (myDistAgg._sum.amount ?? 0) / 100;
+  const totalExpenses = (expenseAgg._sum.amount ?? 0) / 100;
+  const netIncome = totalIncome - totalExpenses;
 
   const statusBadge = estate.status === "ACTIVE" ? "success" : estate.status === "SOLD" ? "gray" : "warning";
 
@@ -82,8 +94,13 @@ export default async function EstateDetailPage({ params }: { params: Promise<{ i
           </div>
         )}
         <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-          <p className="text-xs text-green-600 mb-1">إجمالي الإيرادات</p>
-          <p className="text-xl font-bold text-green-800">{formatCurrency(totalIncome)}</p>
+          <p className="text-xs text-green-600 mb-1">صافي الإيرادات</p>
+          <p className="text-xl font-bold text-green-800">{formatCurrency(netIncome)}</p>
+          {totalExpenses > 0 && (
+            <p className="text-[11px] text-green-600 mt-0.5">
+              إيرادات {formatCurrency(totalIncome)} − مصروفات {formatCurrency(totalExpenses)}
+            </p>
+          )}
         </div>
         <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
           <p className="text-xs text-amber-600 mb-1">حصتي</p>
@@ -194,6 +211,33 @@ export default async function EstateDetailPage({ params }: { params: Promise<{ i
         </div>
       </div>
 
+      {/* Documents + Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <DocumentsCard estateId={id} isAdmin={isAdmin} />
+
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <h2 className="font-bold text-gray-900">📋 سجل النشاط</h2>
+            <p className="text-xs text-gray-400 mt-0.5">من فعل ماذا ومتى — شفافية كاملة أمام كل الورثة</p>
+          </div>
+          <div className="divide-y divide-gray-50 max-h-80 overflow-y-auto">
+            {activity.length === 0 ? (
+              <p className="px-5 py-5 text-sm text-gray-400 text-center">لا يوجد نشاط مسجّل بعد</p>
+            ) : (
+              activity.map((a) => (
+                <div key={a.id} className="px-5 py-2.5">
+                  <p className="text-sm text-gray-700">
+                    <strong>{a.user.name}</strong> {ACTIVITY_LABELS[a.action] ?? a.action}
+                    {a.meta && <span className="text-gray-400"> — {a.meta}</span>}
+                  </p>
+                  <p className="text-[11px] text-gray-400">{formatDate(a.createdAt)}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Quick Actions */}
       <div className="flex gap-3 flex-wrap">
         <Link href={`/estates/${id}/heirs`} className="bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-blue-800 transition-colors">
@@ -205,6 +249,7 @@ export default async function EstateDetailPage({ params }: { params: Promise<{ i
         <Link href={`/estates/${id}/votes`} className="bg-purple-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-purple-800 transition-colors">
           🗳️ التصويتات
         </Link>
+        {isAdmin && <ArchiveButton estateId={id} archived={estate.status === "ARCHIVED"} />}
       </div>
     </div>
   );

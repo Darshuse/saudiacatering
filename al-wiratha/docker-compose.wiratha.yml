@@ -12,6 +12,7 @@ services:
       # إلزامي — ضعه في ملف .env بجوار هذا الملف؛ التطبيق يرفض الإقلاع بدونه
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET مطلوب في ملف .env}
       DATABASE_URL: file:/app/data/waratha.db
+      UPLOADS_DIR: /app/data/uploads
       NEXT_PUBLIC_SITE_URL: https://waratha.app
       # اختياري: رقم واتساب ثابت (وإلا يُستخدم رقم أقدم مستخدم مسجّل)
       WHATSAPP_NUMBER: ${WHATSAPP_NUMBER:-}

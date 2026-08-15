@@ -2,6 +2,7 @@
 import { useState, useEffect, use } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatDateDual } from "@/lib/utils";
 import Link from "next/link";
 
 interface Vote { id: string; choice: string; comment?: string; weight: number; user: { id: string; name: string } }
@@ -174,7 +175,7 @@ export default function VotesPage({ params }: { params: Promise<{ id: string }> 
                     <div className="flex-1">
                       <h3 className="font-bold text-gray-900 text-lg">{proposal.title}</h3>
                       <p className="text-sm text-gray-500 mt-1">
-                        بقلم: {proposal.createdBy.name} • حتى {formatDate(proposal.deadline)}
+                        بقلم: {proposal.createdBy.name} • حتى {formatDateDual(proposal.deadline)}
                         {isOpen && daysLeft > 0 && (
                           <span className={`mr-2 font-bold ${daysLeft <= 3 ? "text-red-600" : "text-blue-600"}`}>
                             ⏳ باقي {daysLeft} {daysLeft === 1 ? "يوم" : daysLeft === 2 ? "يومان" : daysLeft <= 10 ? "أيام" : "يوماً"}

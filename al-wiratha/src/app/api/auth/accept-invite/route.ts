@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { setSession } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { logActivity } from "@/lib/audit";
+import { notifyUsers } from "@/lib/notify";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -62,6 +64,13 @@ export async function POST(req: NextRequest) {
     ]);
 
     await setSession({ userId: user.id, email: user.email, name: user.name, role: user.role });
+
+    logActivity(invite.estateId, user.id, "invite_accepted");
+    const estate = await prisma.estate.findUnique({ where: { id: invite.estateId }, select: { adminId: true } });
+    if (estate) {
+      notifyUsers([estate.adminId], `✓ ${user.name} فعّل حسابه وانضم للورثة`, `/estates/${invite.estateId}/heirs`);
+    }
+
     return NextResponse.json({ success: true });
   } catch (err) {
     if (err instanceof z.ZodError) {

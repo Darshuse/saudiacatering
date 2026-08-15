@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { requireEstateAdmin } from "@/lib/authz";
+import { logActivity } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import crypto from "crypto";
@@ -93,6 +94,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return { share: s, inviteToken: token };
     });
 
+    logActivity(estateId, session.userId, "heir_added", `${share.user.name} — ${data.shareNumerator}/${data.shareDenominator}`);
+
     return NextResponse.json(
       {
         share,
@@ -123,6 +126,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       prisma.heirShare.delete({ where: { estateId_userId: { estateId, userId } } }),
       prisma.heirInvite.deleteMany({ where: { estateId, userId, acceptedAt: null } }),
     ]);
+    logActivity(estateId, session.userId, "heir_removed");
     return NextResponse.json({ success: true });
   } catch (err) {
     if (err instanceof z.ZodError) return NextResponse.json({ error: "خطأ في البيانات" }, { status: 400 });

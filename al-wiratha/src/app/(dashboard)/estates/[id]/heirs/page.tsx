@@ -193,12 +193,22 @@ export default function HeirsPage({ params }: { params: Promise<{ id: string }> 
                     <p className="text-xs text-gray-400">{share.sharePercentage.toFixed(2)}%</p>
                   </div>
                   {isAdmin && invite && (
-                    <button
-                      onClick={() => copyInviteLink(invite)}
-                      className="text-xs font-semibold bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors"
-                    >
-                      {copiedFor === share.user.id ? "✓ تم النسخ — أرسله واتساب" : "📋 نسخ رابط الدعوة"}
-                    </button>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => copyInviteLink(invite)}
+                        className="text-xs font-semibold bg-gray-50 text-gray-600 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        {copiedFor === share.user.id ? "✓ تم النسخ" : "📋 نسخ الرابط"}
+                      </button>
+                      <a
+                        href={`https://wa.me/?text=${encodeURIComponent(`السلام عليكم ${share.user.name}،\nتمت إضافتك كوريث في تركة «${estate.name}» على منصة الورثة.\nفعّل حسابك من هذا الرابط:\n${typeof window !== "undefined" ? window.location.origin : ""}/auth/accept-invite?token=${invite.token}`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors"
+                      >
+                        💬 إرسال واتساب
+                      </a>
+                    </div>
                   )}
                   {isAdmin && (
                     <button

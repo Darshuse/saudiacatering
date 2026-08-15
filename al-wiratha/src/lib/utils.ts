@@ -22,6 +22,25 @@ export function formatDate(date: string | Date): string {
   }).format(new Date(date));
 }
 
+/**
+ * التاريخ الهجري والميلادي معاً — «١ شعبان ١٤٤٦هـ (31 يناير 2025م)».
+ * الهجري لغة المواعيد الشرعية، والميلادي يمنع اللبس في الإدخال والعقود.
+ */
+export function formatDateDual(date: string | Date): string {
+  const d = new Date(date);
+  const hijri = new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(d);
+  const gregorian = new Intl.DateTimeFormat("ar-EG-u-ca-gregory-nu-latn", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(d);
+  return `${hijri}هـ (${gregorian}م)`;
+}
+
 export function estateTypeLabel(type: string): string {
   const labels: Record<string, string> = {
     APARTMENT: "شقة",
@@ -39,6 +58,7 @@ export function estateStatusLabel(status: string): string {
     ACTIVE: "نشط",
     SOLD: "مُباع",
     DISPUTED: "متنازع عليه",
+    ARCHIVED: "مؤرشف",
   };
   return labels[status] ?? status;
 }

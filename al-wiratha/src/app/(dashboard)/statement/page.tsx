@@ -2,7 +2,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { formatHalalas } from "@/lib/money";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDateDual } from "@/lib/utils";
 import { PrintButton } from "@/components/ui/print-button";
 import Link from "next/link";
 
@@ -124,7 +124,7 @@ export default async function StatementPage() {
                   </p>
                   <p className="text-xs text-gray-400">
                     {d.status === "PAID" && d.paidAt
-                      ? `دُفع في ${formatDate(d.paidAt)}${d.paymentRef ? ` • مرجع: ${d.paymentRef}` : ""}`
+                      ? `دُفع في ${formatDateDual(d.paidAt)}${d.paymentRef ? ` • مرجع: ${d.paymentRef}` : ""}`
                       : `استُحق في ${formatDate(d.rentalIncome.date)}`}
                   </p>
                 </div>

@@ -24,6 +24,10 @@ model User {
   votes          Vote[]
   createdIncomes RentalIncome[] @relation("IncomeCollector")
   heirInvites    HeirInvite[]
+  expenses       Expense[]
+  activityLogs   ActivityLog[]
+  documents      Document[]
+  notifications  Notification[]
 }
 
 enum Role {
@@ -49,6 +53,9 @@ model Estate {
   rentalIncomes RentalIncome[]
   proposals     Proposal[]
   heirInvites   HeirInvite[]
+  expenses      Expense[]
+  activityLogs  ActivityLog[]
+  documents     Document[]
 }
 
 enum EstateType {
@@ -64,6 +71,7 @@ enum EstateStatus {
   ACTIVE
   SOLD
   DISPUTED
+  ARCHIVED
 }
 
 model HeirShare {
@@ -166,6 +174,62 @@ enum VoteChoice {
   YES
   NO
   ABSTAIN
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  estateId    String
+  // Halalas (integer)
+  amount      Int
+  category    String
+  description String?
+  date        DateTime
+  createdById String
+  createdAt   DateTime @default(now())
+
+  estate    Estate @relation(fields: [estateId], references: [id], onDelete: Cascade)
+  createdBy User   @relation(fields: [createdById], references: [id])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  estateId  String
+  userId    String
+  action    String
+  meta      String?
+  createdAt DateTime @default(now())
+
+  estate Estate @relation(fields: [estateId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([estateId, createdAt])
+}
+
+model Document {
+  id           String   @id @default(cuid())
+  estateId     String
+  name         String
+  fileName     String
+  mimeType     String
+  size         Int
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  estate     Estate @relation(fields: [estateId], references: [id], onDelete: Cascade)
+  uploadedBy User   @relation(fields: [uploadedById], references: [id])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
 }
 
 model HeirInvite {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { logActivity } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 
@@ -18,6 +19,7 @@ export async function GET() {
 
   const estates = await prisma.estate.findMany({
     where: {
+      status: { not: "ARCHIVED" },
       OR: [
         { adminId: session.userId },
         { heirShares: { some: { userId: session.userId } } },
@@ -48,7 +50,7 @@ export async function POST(req: NextRequest) {
       data: { ...data, adminId: session.userId },
     });
 
-    // Add admin as heir with 0% initially
+    logActivity(estate.id, session.userId, "estate_created", estate.name);
     return NextResponse.json({ estate }, { status: 201 });
   } catch (err) {
     if (err instanceof z.ZodError) return NextResponse.json({ error: err.issues[0]?.message ?? "خطأ في البيانات" }, { status: 400 });

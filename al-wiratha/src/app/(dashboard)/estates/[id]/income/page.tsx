@@ -7,6 +7,9 @@ import Link from "next/link";
 
 interface Distribution { id: string; userId: string; amount: number; sharePercentage: number; status: string; paidAt?: string; paymentRef?: string; user: { id: string; name: string } }
 interface RentalIncome { id: string; amount: number; period: string; date: string; description?: string; status: string; distributions: Distribution[] }
+interface Expense { id: string; amount: number; category: string; description?: string; date: string; createdBy: { name: string } }
+
+const EXPENSE_CATEGORIES = ["صيانة", "زكاة", "رسوم حكومية", "أتعاب", "تأمين", "أخرى"] as const;
 function formatDate(d: string) {
   return new Intl.DateTimeFormat("ar-SA", { year: "numeric", month: "long", day: "numeric" }).format(new Date(d));
 }
@@ -22,20 +25,48 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [form, setForm] = useState({ amount: "", period: "", date: new Date().toISOString().split("T")[0], description: "" });
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expForm, setExpForm] = useState({ amount: "", category: "صيانة", description: "", date: new Date().toISOString().split("T")[0] });
+  const [expError, setExpError] = useState("");
+  const [addingExp, setAddingExp] = useState(false);
 
   useEffect(() => {
     Promise.all([
       fetch(`/api/estates/${id}/income`).then((r) => r.json()),
       fetch(`/api/estates/${id}`).then((r) => r.json()),
       fetch(`/api/auth/me`).then((r) => r.json()),
-    ]).then(([incData, estData, meData]) => {
+      fetch(`/api/estates/${id}/expenses`).then((r) => r.json()),
+    ]).then(([incData, estData, meData, expData]) => {
       setIncomes(incData.incomes ?? []);
       setEstateName(estData.estate?.name ?? "");
       setMyId(meData.user?.id ?? "");
       setIsAdmin(!!meData.user?.id && estData.estate?.adminId === meData.user.id);
+      setExpenses(expData.expenses ?? []);
       setLoading(false);
     });
   }, [id]);
+
+  async function handleAddExpense(e: React.FormEvent) {
+    e.preventDefault();
+    setAddingExp(true);
+    setExpError("");
+    const res = await fetch(`/api/estates/${id}/expenses`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        amount: parseFloat(expForm.amount),
+        category: expForm.category,
+        description: expForm.description || undefined,
+        date: expForm.date,
+      }),
+    });
+    const data = await res.json();
+    setAddingExp(false);
+    if (!res.ok) { setExpError(data.error ?? "حدث خطأ"); return; }
+    setExpForm({ amount: "", category: "صيانة", description: "", date: new Date().toISOString().split("T")[0] });
+    const r = await fetch(`/api/estates/${id}/expenses`).then((x) => x.json());
+    setExpenses(r.expenses ?? []);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -80,6 +111,7 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
   if (loading) return <div className="text-center py-12 text-gray-400">جاري التحميل...</div>;
 
   const totalIncome = incomes.reduce((s, i) => s + i.amount, 0);
+  const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
   const myDists = incomes.flatMap((i) => i.distributions.filter((d) => d.userId === myId));
   const myDue = myDists.reduce((s, d) => s + d.amount, 0);
   const myPaid = myDists.filter((d) => d.status === "PAID").reduce((s, d) => s + d.amount, 0);
@@ -96,6 +128,9 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
         <div className="bg-green-50 border border-green-200 rounded-xl p-5">
           <p className="text-sm text-green-600 mb-1">إجمالي الإيرادات المسجلة</p>
           <p className="text-3xl font-bold text-green-800">{formatHalalas(totalIncome)}</p>
+          {totalExpenses > 0 && (
+            <p className="text-xs text-green-600 mt-1">المصروفات: {formatHalalas(totalExpenses)} — الصافي: <strong>{formatHalalas(totalIncome - totalExpenses)}</strong></p>
+          )}
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
           <p className="text-sm text-blue-600 mb-1">نصيبي: {formatHalalas(myDue)}</p>
@@ -234,6 +269,57 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
             <p className="text-4xl mb-2">💰</p>
             <p>لا توجد إيرادات مسجلة بعد</p>
           </div>
+        )}
+      </div>
+
+      {/* Expenses */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h2 className="font-bold text-gray-900">🧾 المصروفات ({expenses.length})</h2>
+          <p className="text-xs text-gray-400 mt-0.5">صيانة، زكاة، رسوم، أتعاب — موثقة أمام كل الورثة</p>
+        </div>
+        <div className="divide-y divide-gray-50">
+          {expenses.length === 0 ? (
+            <p className="px-6 py-5 text-sm text-gray-400 text-center">لا توجد مصروفات مسجلة</p>
+          ) : (
+            expenses.map((exp) => (
+              <div key={exp.id} className="px-6 py-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-800">
+                    {exp.category}{exp.description ? ` — ${exp.description}` : ""}
+                  </p>
+                  <p className="text-xs text-gray-400">{formatDate(exp.date)} • سجّله {exp.createdBy.name}</p>
+                </div>
+                <span className="font-bold text-red-600 flex-shrink-0">− {formatHalalas(exp.amount)}</span>
+              </div>
+            ))
+          )}
+        </div>
+        {isAdmin && (
+          <form onSubmit={handleAddExpense} className="px-6 py-4 border-t border-gray-100 space-y-3">
+            {expError && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{expError}</p>}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <Input label="المبلغ (ريال)" type="number" min="1" step="0.01" value={expForm.amount}
+                onChange={(e) => setExpForm((f) => ({ ...f, amount: e.target.value }))} required />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-gray-700">التصنيف</label>
+                <select
+                  value={expForm.category}
+                  onChange={(e) => setExpForm((f) => ({ ...f, category: e.target.value }))}
+                  className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none bg-white"
+                >
+                  {EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <Input label="التاريخ" type="date" value={expForm.date}
+                onChange={(e) => setExpForm((f) => ({ ...f, date: e.target.value }))} required />
+              <Input label="ملاحظة" value={expForm.description}
+                onChange={(e) => setExpForm((f) => ({ ...f, description: e.target.value }))} placeholder="اختياري" />
+            </div>
+            <Button type="submit" loading={addingExp} variant="ghost" className="w-full border border-gray-300">
+              🧾 تسجيل المصروف
+            </Button>
+          </form>
         )}
       </div>
     </div>
