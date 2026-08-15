@@ -1,0 +1,25 @@
+name: مزامنة المنصة إلى Darshuse/al-wiratha
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/al-wiratha-platform-puneqz]
+    paths: ["al-wiratha/**"]
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: فصل تاريخ مجلد al-wiratha كمستودع مستقل
+        run: git subtree split --prefix=al-wiratha -b wiratha-split
+
+      # يُدفع إلى فرع platform (وليس master) حفاظاً على المحتوى القديم في المستودع —
+      # لجعله الفرع الرئيسي: Settings → Branches → Default branch → platform
+      - name: الدفع إلى المستودع المخصص
+        run: |
+          git push "https://x-access-token:${{ secrets.WIRATHA_PUSH_TOKEN }}@github.com/Darshuse/al-wiratha.git" \
+            wiratha-split:refs/heads/platform --force
