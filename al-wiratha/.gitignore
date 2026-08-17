@@ -30,3 +30,8 @@ npm-debug.log*
 # Prisma
 prisma/migrations/
 uploads/
+
+# ملفات اختبار QA المؤقتة
+uploads-qa*/
+qa*.db
+_qa*.mjs
