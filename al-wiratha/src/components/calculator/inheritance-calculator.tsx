@@ -4,8 +4,13 @@ import Link from "next/link";
 import { calculateInheritance, getMadhabDifferences, MADHABS, type HeirInput, type InheritanceResult, type Madhab, type CalcMode } from "@/lib/inheritance";
 import { track } from "@/lib/analytics-client";
 import { LegalDisclaimer } from "@/components/ui/legal-disclaimer";
+import { computeEstateRights, type EstateRightsResult } from "@/lib/estate-rights";
 
 const DRAFT_KEY = "wiratha-calc-draft";
+
+function fmtSAR(n: number): string {
+  return new Intl.NumberFormat("ar-SA", { style: "currency", currency: "SAR", minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
+}
 
 const defaultInput: HeirInput = {
   husbands: 0, wives: 0, sons: 0, daughters: 0,
@@ -40,9 +45,14 @@ function buildShareText(results: InheritanceResult[], origin: string): string {
 export function InheritanceCalculator({ variant }: { variant: "public" | "dashboard" }) {
   const [input, setInput] = useState<HeirInput>(defaultInput);
   const [estateValue, setEstateValue] = useState("");
+  // الحقوق المتعلقة بالتركة قبل القسمة (اختيارية)
+  const [funeral, setFuneral] = useState("");
+  const [debts, setDebts] = useState("");
+  const [wasiyya, setWasiyya] = useState("");
   // الافتراضي: النظام السعودي (القاعدة)، والمذاهب الأربعة متاحة للمقارنة التعليمية
   const [selectedMadhab, setSelectedMadhab] = useState<CalcMode | "ALL">("SAUDI");
   const [results, setResults] = useState<InheritanceResult[] | null>(null);
+  const [rights, setRights] = useState<EstateRightsResult | null>(null);
   const [showDiffs, setShowDiffs] = useState(false);
   const [copied, setCopied] = useState(false);
   const [origin, setOrigin] = useState("");
@@ -78,7 +88,20 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
   }
 
   function calculate() {
-    const value = estateValue ? parseFloat(estateValue) : undefined;
+    const gross = estateValue ? parseFloat(estateValue) : 0;
+    // احسب صافي التركة بعد التجهيز والديون والوصية (بحد الثلث)
+    let value: number | undefined = estateValue ? gross : undefined;
+    let rightsResult: EstateRightsResult | null = null;
+    if (gross > 0 && (funeral || debts || wasiyya)) {
+      rightsResult = computeEstateRights({
+        gross,
+        funeral: parseFloat(funeral) || 0,
+        debts: parseFloat(debts) || 0,
+        wasiyya: parseFloat(wasiyya) || 0,
+      });
+      value = rightsResult.net;
+    }
+    setRights(rightsResult);
     const modes: CalcMode[] = selectedMadhab === "ALL" ? ["HANAFI", "MALIKI", "SHAFII", "HANBALI"] : [selectedMadhab];
     const res = modes.map((m) => calculateInheritance(input, m, value));
     setResults(res);
@@ -88,7 +111,11 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
   function reset() {
     setInput(defaultInput);
     setEstateValue("");
+    setFuneral("");
+    setDebts("");
+    setWasiyya("");
     setResults(null);
+    setRights(null);
   }
 
   function saveDraft() {
@@ -194,6 +221,35 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
                 placeholder="مثال: 1000000"
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               />
+
+              {/* الحقوق المتعلقة بالتركة قبل القسمة */}
+              <details className="mt-3">
+                <summary className="text-xs font-semibold text-blue-700 cursor-pointer list-none">
+                  ➕ الحقوق قبل القسمة (تجهيز · ديون · وصية)
+                </summary>
+                <div className="mt-2 space-y-2">
+                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                    الترتيب الشرعي: تجهيز الميت ← سداد الديون ← تنفيذ الوصية (بحدّ الثلث) ← ثم قسمة الباقي على الورثة.
+                  </p>
+                  {[
+                    { label: "تجهيز الميت", val: funeral, set: setFuneral },
+                    { label: "الديون", val: debts, set: setDebts },
+                    { label: "الوصية (بحد الثلث)", val: wasiyya, set: setWasiyya },
+                  ].map((f) => (
+                    <div key={f.label} className="flex items-center justify-between gap-2">
+                      <label className="text-xs text-gray-600">{f.label}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={f.val}
+                        onChange={(e) => f.set(e.target.value)}
+                        placeholder="0"
+                        className="w-28 rounded-lg border border-gray-300 px-2 py-1.5 text-xs focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </details>
             </div>
 
             {/* موانع الإرث — إرشاد قبل الإدخال */}
@@ -276,6 +332,29 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
             </div>
           ) : (
             <>
+              {/* تفصيل الحقوق قبل القسمة */}
+              {rights && (
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 text-sm">
+                  <h3 className="font-bold text-gray-900 mb-2">ترتيب الحقوق قبل القسمة</h3>
+                  {rights.estateConsumed ? (
+                    <p className="text-red-700 bg-red-50 rounded-lg px-3 py-2">⚠️ التركة مستغرقة بالتجهيز والديون — لا يبقى شيء يُقسَّم على الورثة.</p>
+                  ) : (
+                    <div className="space-y-1 text-gray-600">
+                      <div className="flex justify-between"><span>إجمالي التركة</span><span className="font-semibold">{fmtSAR(rights.gross)}</span></div>
+                      {rights.funeral > 0 && <div className="flex justify-between"><span>− تجهيز الميت</span><span>{fmtSAR(rights.funeral)}</span></div>}
+                      {rights.debts > 0 && <div className="flex justify-between"><span>− الديون</span><span>{fmtSAR(rights.debts)}</span></div>}
+                      {rights.wasiyyaApplied > 0 && <div className="flex justify-between"><span>− الوصية المنفَّذة</span><span>{fmtSAR(rights.wasiyyaApplied)}</span></div>}
+                      <div className="flex justify-between border-t border-gray-200 pt-1 mt-1 font-bold text-gray-900"><span>الصافي الموزَّع على الورثة</span><span className="text-green-700">{fmtSAR(rights.net)}</span></div>
+                      {rights.wasiyyaExceeded && (
+                        <p className="text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-2 text-xs">
+                          ⚠️ الوصية تتجاوز الثلث ({fmtSAR(rights.wasiyyaMax)}) — نُفِّذ منها القدر المسموح فقط، والباقي لا ينفذ إلا بإجازة الورثة.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {results.map((result) => <ResultCard key={result.mode} result={result} />)}
 
               {/* Share & print — the family WhatsApp group is the real growth channel */}
@@ -352,6 +431,23 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
           </div>
         )}
       </div>
+
+      {/* حالات خاصة تحتاج مختصاً — شفافية بدل تنفيذ ناقص */}
+      <details className="bg-blue-50 border border-blue-200 rounded-xl print:hidden">
+        <summary className="px-4 py-3 text-sm font-semibold text-blue-800 cursor-pointer list-none flex items-center justify-between">
+          <span>📋 حالات خاصة خارج نطاق الحاسبة — تحتاج مختصاً</span>
+          <span className="text-xs">▼</span>
+        </summary>
+        <div className="px-4 pb-3 text-xs text-blue-700 leading-relaxed">
+          <p className="mb-1">الحاسبة تغطّي القسمة المباشرة. الحالات التالية تتطلب إجراءً خاصاً ومراجعة مختص فرائض:</p>
+          <ul className="list-disc mr-4 space-y-0.5">
+            <li><strong>المناسخة</strong>: وفاة وارث قبل قسمة تركة سابقة (تركات متعاقبة).</li>
+            <li><strong>الحمل</strong>: يُوقَف نصيب الحمل حتى الوضع.</li>
+            <li><strong>المفقود</strong>: يُوقَف نصيبه حتى يتبيّن حاله.</li>
+            <li><strong>الخنثى المُشكِل</strong>: يُحسب بالأحوط حتى يتبيّن.</li>
+          </ul>
+        </div>
+      </details>
 
       {/* Disclaimer — الصيغة الموحّدة عبر كل المنصة */}
       <LegalDisclaimer />
