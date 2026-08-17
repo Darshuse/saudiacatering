@@ -13,6 +13,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # بدون هذا السطر يحقن checkout توكنه المحدود في git config
+          # فيُرسَل بدل توكن المزامنة ويفشل الدفع بـ "Repository not found"
+          persist-credentials: false
 
       - name: فصل تاريخ مجلد al-wiratha كمستودع مستقل
         run: git subtree split --prefix=al-wiratha -b wiratha-split
