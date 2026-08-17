@@ -42,11 +42,11 @@ jobs:
           echo "— اختبار قراءة git (صيغة username):"
           if git ls-remote "$AUTH_URL" HEAD; then
             echo "— الدفع:"
-            git push "$AUTH_URL" wiratha-split:refs/heads/platform --force
+            git push "$AUTH_URL" wiratha-split:refs/heads/main --force
           else
             echo "— صيغة username فشلت، تجربة Bearer header:"
             git -c http.extraHeader="Authorization: Bearer ${TOKEN}" ls-remote https://github.com/Darshuse/al-wiratha.git HEAD
             echo "— الدفع (Bearer):"
             git -c http.extraHeader="Authorization: Bearer ${TOKEN}" push https://github.com/Darshuse/al-wiratha.git \
-              wiratha-split:refs/heads/platform --force
+              wiratha-split:refs/heads/main --force
           fi
