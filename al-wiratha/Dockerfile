@@ -21,5 +21,5 @@ RUN JWT_SECRET=build-only-placeholder DATABASE_URL=file:./dev.db \
 
 EXPOSE 3000
 
-# عند الإقلاع: مزامنة مخطط قاعدة البيانات ثم تشغيل الخادم
-CMD ["sh", "-c", "npx prisma db push --skip-generate && npm run start"]
+# عند الإقلاع: مزامنة مخطط قاعدة البيانات ثم تشغيل الخادم على منفذ المنصة ($PORT في Railway)
+CMD ["sh", "-c", "npx prisma db push --skip-generate && npx next start -p ${PORT:-3000}"]
