@@ -20,6 +20,9 @@ jobs:
       # يُدفع إلى فرع platform (وليس master) حفاظاً على المحتوى القديم في المستودع —
       # لجعله الفرع الرئيسي: Settings → Branches → Default branch → platform
       - name: الدفع إلى المستودع المخصص
+        env:
+          # يقبل أياً من الاسمين — MY_ALL_REPO_TOKEN هو المضاف فعلاً
+          PUSH_TOKEN: ${{ secrets.MY_ALL_REPO_TOKEN || secrets.my_all_repo_token || secrets.WIRATHA_PUSH_TOKEN }}
         run: |
-          git push "https://x-access-token:${{ secrets.WIRATHA_PUSH_TOKEN }}@github.com/Darshuse/al-wiratha.git" \
+          git push "https://x-access-token:${PUSH_TOKEN}@github.com/Darshuse/al-wiratha.git" \
             wiratha-split:refs/heads/platform --force
