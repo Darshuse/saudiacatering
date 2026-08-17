@@ -131,6 +131,24 @@ export function calculateInheritance(
   const hasSiblings = input.fullBrothers > 0 || input.fullSisters > 0 ||
     input.halfBrothersPaternal > 0 || input.halfSistersPaternal > 0;
 
+  // --- الأكدرية (قول زيد بن ثابت والجمهور: المالكي/الشافعي/الحنبلي) ---
+  // جد + أخت واحدة (شقيقة أو لأب) + صاحب فرض، بلا فرع ولا أب ولا إخوة آخرين:
+  // تُفرَض للأخت النصف وللجد السدس، ثم يُعال، ثم يُجمع نصيبا الجد والأخت ويقتسمانه للذكر مثل حظ الأنثيين.
+  // في النظام السعودي والحنفي: الجد يحجب الأخت فلا أكدرية.
+  const loneSisterFull = input.fullSisters === 1 && input.fullBrothers === 0 &&
+    input.halfBrothersPaternal === 0 && input.halfSistersPaternal === 0;
+  const loneSisterPaternal = input.fullSisters === 0 && input.fullBrothers === 0 &&
+    input.halfSistersPaternal === 1 && input.halfBrothersPaternal === 0;
+  const hasFard = input.husbands > 0 || input.wives > 0 || input.mother ||
+    input.grandmotherPaternal || input.grandmotherMaternal;
+  const isAkdariyya = !grandfatherBlocksSiblings && input.grandfatherPaternal && !input.father &&
+    !hasChildren && input.halfBrothersMaternal === 0 && input.halfSistersMaternal === 0 &&
+    (loneSisterFull || loneSisterPaternal) && hasFard;
+
+  if (isAkdariyya) {
+    return computeAkdariyya(input, mode, madhab, loneSisterFull, estateValue);
+  }
+
   // --- حجب الجد بالأب ---
   const grandfatherBlocked = input.grandfatherPaternal && input.father;
   if (grandfatherBlocked) {
@@ -377,6 +395,59 @@ export function calculateInheritance(
   const result = computeResult(shares, madhab, blocked, notes, estateValue);
   const madhabLabel = isSaudi ? "النظام السعودي" : MADHABS.find((m) => m.value === madhab)!.label;
   return { ...result, madhab, mode, madhabLabel };
+}
+
+/** الأكدرية: يُبنى الحل على الفروض مع عول، ثم يُجمع نصيبا الجد والأخت ويقتسمانه للذكر مثل حظ الأنثيين. */
+function computeAkdariyya(
+  input: HeirInput,
+  mode: CalcMode,
+  madhab: Madhab,
+  loneSisterFull: boolean,
+  estateValue?: number
+): InheritanceResult {
+  const shares: ShareEntry[] = [];
+  const notes: string[] = ["المسألة الأكدرية (قول زيد بن ثابت والجمهور): تُفرَض للأخت النصف وللجد السدس ثم تعول المسألة، ثم يُجمع نصيبا الجد والأخت ويقتسمانه للذكر مثل حظ الأنثيين (للجد الثلثان وللأخت الثلث)."];
+
+  // الزوج/الزوجة
+  if (input.husbands > 0) {
+    shares.push({ key: "husband", nameAr: "الزوج", count: 1, numerator: 1, denominator: 2, basis: "النصف للزوج مع عدم وجود الفرع الوارث" });
+  } else if (input.wives > 0) {
+    shares.push({ key: "wife", nameAr: "الزوجة/الزوجات", count: input.wives, numerator: 1, denominator: 4, basis: "الربع للزوجة مع عدم وجود الفرع الوارث" });
+  }
+  // الأم (الثلث مع الجد وأخت واحدة)
+  if (input.mother) {
+    shares.push({ key: "mother", nameAr: "الأم", count: 1, numerator: 1, denominator: 3, basis: "الثلث للأم مع الجد وعدم وجود فرع وارث أو عدد من الإخوة" });
+  } else if (input.grandmotherMaternal || input.grandmotherPaternal) {
+    shares.push({ key: "grandmother", nameAr: "الجدة", count: 1, numerator: 1, denominator: 6, basis: "السدس للجدة عند عدم وجود الأم" });
+  }
+  // الأخت: النصف فرضاً (خصيصة الأكدرية)
+  const sisterKey = loneSisterFull ? "fullSisters" : "halfSistersP";
+  const sisterName = loneSisterFull ? "الأخت الشقيقة" : "الأخت لأب";
+  shares.push({ key: sisterKey, nameAr: sisterName, count: 1, numerator: 1, denominator: 2, basis: "يُفرَض للأخت النصف في الأكدرية (خلافاً للأصل من أنها عصبة مع الجد)" });
+  // الجد: السدس فرضاً
+  shares.push({ key: "grandfather", nameAr: "الجد لأب", count: 1, numerator: 1, denominator: 6, basis: "يُفرَض للجد السدس في الأكدرية" });
+
+  const base = computeResult(shares, madhab, [], notes, estateValue);
+
+  // دمج نصيبي الجد والأخت واقتسامهما 2:1 (للذكر مثل حظ الأنثيين)
+  const gd = base.heirs.find((h) => h.name === "grandfather");
+  const sis = base.heirs.find((h) => h.name === sisterKey);
+  if (gd && sis) {
+    const combined = gd.percentage + sis.percentage;
+    gd.percentage = (combined * 2) / 3;
+    sis.percentage = combined / 3;
+    gd.fraction = "الثلثان من مجموع نصيب الجد والأخت";
+    sis.fraction = "الثلث من مجموع نصيب الجد والأخت";
+    if (estateValue) {
+      gd.totalAmount = (gd.percentage / 100) * estateValue;
+      gd.amountPerPerson = gd.totalAmount;
+      sis.totalAmount = (sis.percentage / 100) * estateValue;
+      sis.amountPerPerson = sis.totalAmount;
+    }
+  }
+
+  const madhabLabel = mode === "SAUDI" ? "النظام السعودي" : MADHABS.find((m) => m.value === madhab)!.label;
+  return { ...base, madhab, mode, madhabLabel, awl: true };
 }
 
 function computeResult(

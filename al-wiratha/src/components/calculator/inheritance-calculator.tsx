@@ -196,6 +196,26 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
               />
             </div>
 
+            {/* موانع الإرث — إرشاد قبل الإدخال */}
+            <details className="mb-4 bg-red-50 border border-red-200 rounded-lg">
+              <summary className="px-3 py-2 text-sm font-semibold text-red-800 cursor-pointer list-none flex items-center justify-between">
+                <span>⚖️ موانع الإرث — اقرأ قبل الإدخال</span>
+                <span className="text-xs">▼</span>
+              </summary>
+              <div className="px-3 pb-3 text-xs text-red-700 leading-relaxed space-y-1.5">
+                <p>الموانع الثلاثة المتفق عليها التي تمنع الوارث من الميراث:</p>
+                <ul className="list-disc mr-4 space-y-0.5">
+                  <li><strong>القتل</strong> — من قتل مورّثه عمداً وعدواناً لا يرث منه.</li>
+                  <li><strong>اختلاف الدين</strong> — لا توارث بين المسلم وغير المسلم.</li>
+                  <li><strong>الرقّ / اختلاف الدارين</strong> (نادر اليوم).</li>
+                </ul>
+                <p className="pt-1 border-t border-red-200">
+                  <strong>قاعدة مهمة (الجمهور):</strong> الوارث الممنوع بمانع <strong>لا يرث ولا يحجب غيره</strong> — يُعامل كالمعدوم.
+                  لذلك <strong>لا تُدخِله في القائمة أدناه أصلاً</strong> ليكون الحساب صحيحاً.
+                </p>
+              </div>
+            </details>
+
             {/* Spouse */}
             <Section title="الزوج / الزوجة">
               <NumberField label="زوج" value={input.husbands} max={1} onChange={(v) => setNum("husbands", v)} />
