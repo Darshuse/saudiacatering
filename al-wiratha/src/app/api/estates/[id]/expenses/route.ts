@@ -9,8 +9,8 @@ import { z } from "zod";
 
 const schema = z
   .object({
-    amount: z.number().positive("المبلغ يجب أن يكون موجباً"),
-    category: z.enum(["صيانة", "زكاة", "رسوم حكومية", "أتعاب", "تأمين", "أخرى"]),
+    amount: z.number({ error: "المبلغ يجب أن يكون رقماً" }).finite("المبلغ غير صالح").positive("المبلغ يجب أن يكون موجباً"),
+    category: z.enum(["صيانة", "زكاة", "رسوم حكومية", "أتعاب", "تأمين", "أخرى"], { error: "التصنيف غير صالح" }),
     description: z.string().max(300).optional(),
     date: z.string().refine((s) => !isNaN(Date.parse(s)), "تاريخ غير صالح"),
   })

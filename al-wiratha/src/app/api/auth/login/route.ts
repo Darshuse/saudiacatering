@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { setSession } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { clientIp } from "@/lib/client-ip";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -15,8 +16,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const data = schema.parse(body);
 
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-    if (!rateLimit(`login:ip:${ip}`, 5, 60_000) || !rateLimit(`login:email:${data.email}`, 10, 15 * 60_000)) {
+    // Per-email is the reliable throttle (can't be spoofed) and is the primary
+    // defence against targeted brute-force. Per-IP only adds protection when a
+    // trusted proxy gives us a real IP — otherwise a single shared bucket would
+    // let a spoofer lock out everyone, so we skip it.
+    const ip = clientIp(req);
+    const emailLimited = !rateLimit(`login:email:${data.email}`, 10, 15 * 60_000);
+    const ipLimited = ip !== "shared" && !rateLimit(`login:ip:${ip}`, 30, 60_000);
+    if (emailLimited || ipLimited) {
       return NextResponse.json({ error: "محاولات كثيرة — حاول مرة أخرى بعد قليل" }, { status: 429 });
     }
 

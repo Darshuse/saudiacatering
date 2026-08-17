@@ -40,8 +40,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const access = await requireEstateAdmin(estateId, session.userId);
   if (access instanceof NextResponse) return access;
 
+  // Reading the body can throw if it exceeds the platform limit — surface a
+  // clear size message (413) instead of a generic 500.
+  let form: FormData;
   try {
-    const form = await req.formData();
+    form = await req.formData();
+  } catch {
+    return NextResponse.json({ error: "الملف كبير جداً — الحد الأقصى 10MB" }, { status: 413 });
+  }
+
+  try {
     const file = form.get("file");
     const name = String(form.get("name") ?? "").trim();
 

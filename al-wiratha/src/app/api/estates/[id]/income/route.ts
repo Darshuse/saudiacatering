@@ -9,7 +9,7 @@ import { z } from "zod";
 
 const schema = z
   .object({
-    amount: z.number().positive("المبلغ يجب أن يكون موجباً"),
+    amount: z.number({ error: "المبلغ يجب أن يكون رقماً" }).finite("المبلغ غير صالح").positive("المبلغ يجب أن يكون موجباً"),
     period: z.string().min(1, "الفترة مطلوبة"),
     date: z.string().refine((s) => !isNaN(Date.parse(s)), "تاريخ غير صالح"),
     description: z.string().optional(),

@@ -23,6 +23,9 @@ export async function POST(req: NextRequest) {
     }
 
     const hashed = await bcrypt.hash(data.password, 10);
+    // Default role is HEIR; per-estate authority comes from ownership
+    // (adminId) not this global flag. The user becomes admin of any estate
+    // they create — no need to grant a global ADMIN role on signup.
     const user = await prisma.user.create({
       data: {
         name: data.name,
@@ -30,7 +33,7 @@ export async function POST(req: NextRequest) {
         password: hashed,
         phone: data.phone,
         nationalId: data.nationalId,
-        role: "ADMIN",
+        role: "HEIR",
       },
     });
 
