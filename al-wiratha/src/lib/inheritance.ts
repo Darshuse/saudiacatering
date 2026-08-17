@@ -252,6 +252,17 @@ export function calculateInheritance(
     }
   }
 
+  // --- حجب الإخوة لأم (بالفرع الوارث أو الأب أو الجد) — يُدرجون في قائمة المحجوبين للشفافية ---
+  // يُنفَّذ خارج شرط قسم الإخوة لأن الأب يحجب القسم كله فلا يصل الإخوة لأم إليه
+  {
+    const uterine = input.halfBrothersMaternal + input.halfSistersMaternal;
+    if (uterine > 0 && (hasChildren || input.father || input.grandfatherPaternal)) {
+      const blocker = hasChildren ? "الفرع الوارث (ابن/بنت)" : input.father ? "الأب" : "الجد";
+      if (input.halfBrothersMaternal > 0) blocked.push({ name: "الإخوة لأم", blockedBy: blocker });
+      if (input.halfSistersMaternal > 0) blocked.push({ name: "الأخوات لأم", blockedBy: blocker });
+    }
+  }
+
   // --- الإخوة والأخوات (عند عدم حجبهم) ---
   if (!input.father && !(madhab === "HANAFI" && input.grandfatherPaternal)) {
     // الإخوة لأم
