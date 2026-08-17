@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { calculateInheritance, getMadhabDifferences, MADHABS, type HeirInput, type InheritanceResult, type Madhab } from "@/lib/inheritance";
 import { track } from "@/lib/analytics-client";
+import { LegalDisclaimer } from "@/components/ui/legal-disclaimer";
 
 const DRAFT_KEY = "wiratha-calc-draft";
 
@@ -310,10 +311,13 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
         )}
       </div>
 
-      {/* Disclaimer */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-        <strong>⚠️ تنبيه هام:</strong> هذه الحاسبة للأغراض التعليمية والاستئناسية فقط. لا تُعتمد نتائجها في تقسيم التركات الفعلية دون الرجوع إلى قاضٍ شرعي أو عالم متخصص في الفرائض.
-      </div>
+      {/* Disclaimer — الصيغة الموحّدة عبر كل المنصة */}
+      <LegalDisclaimer />
+
+      {/* ملاحظة الحتمية والمنهج — سدّ ملاحظة «شفافية المحرك» */}
+      <p className="text-xs text-gray-400 text-center print:hidden">
+        يعتمد الحساب على قواعد علم الفرائض بالكسور الدقيقة (محرك حتمي)، لا على نموذج لغوي.
+      </p>
 
       {/* Print-only branding — every printed result is an ad inside the family group */}
       <div className="hidden print:block text-center border-t border-gray-300 pt-4 mt-6 text-sm text-gray-700">

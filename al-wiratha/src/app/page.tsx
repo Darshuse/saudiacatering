@@ -172,8 +172,13 @@ export default async function LandingPage() {
       </div>
 
       <footer className="bg-gray-900 text-gray-400 text-center py-6 text-sm">
-        <p>منصة الورثة © 2025 — إدارة التركات وفق أحكام الشريعة الإسلامية</p>
-        <p className="text-xs mt-1 text-gray-600">للأغراض التعليمية — يُنصح بالرجوع للجهات الشرعية المختصة</p>
+        <p>منصة الورثة © 2026 — إدارة التركات وفق أحكام الشريعة الإسلامية</p>
+        <p className="text-xs mt-1 text-gray-600">النتائج استرشادية تعليمية — يُنصح بالرجوع للجهات الشرعية والقضائية المختصة</p>
+        <div className="flex gap-4 justify-center mt-3 text-xs">
+          <Link href="/privacy" className="text-gray-400 hover:text-white">سياسة الخصوصية</Link>
+          <Link href="/terms" className="text-gray-400 hover:text-white">شروط الاستخدام</Link>
+          <Link href="/calculator" className="text-gray-400 hover:text-white">حاسبة المواريث</Link>
+        </div>
       </footer>
 
       <WhatsAppButton phone={whatsapp} />

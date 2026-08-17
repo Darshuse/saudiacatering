@@ -10,11 +10,13 @@ export default function RegisterPage() {
   }, []);
   const router = useRouter();
   const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
+  const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!consent) { setError("يجب الموافقة على شروط الاستخدام وسياسة الخصوصية للمتابعة"); return; }
     setLoading(true);
     setError("");
 
@@ -74,9 +76,25 @@ export default function RegisterPage() {
               </div>
             ))}
 
+            <label className="flex items-start gap-2 text-xs text-gray-600 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span>
+                أوافق على{" "}
+                <Link href="/terms" target="_blank" className="text-blue-600 font-semibold hover:underline">شروط الاستخدام</Link>
+                {" "}و{" "}
+                <Link href="/privacy" target="_blank" className="text-blue-600 font-semibold hover:underline">سياسة الخصوصية</Link>
+                {" "}وعلى معالجة بياناتي وفقاً لها.
+              </span>
+            </label>
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !consent}
               className="w-full bg-blue-700 text-white py-3 rounded-xl font-bold hover:bg-blue-800 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
