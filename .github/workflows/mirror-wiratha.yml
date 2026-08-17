@@ -24,5 +24,12 @@ jobs:
           # يقبل أياً من الاسمين — MY_ALL_REPO_TOKEN هو المضاف فعلاً
           PUSH_TOKEN: ${{ secrets.MY_ALL_REPO_TOKEN || secrets.my_all_repo_token || secrets.WIRATHA_PUSH_TOKEN }}
         run: |
-          git push "https://x-access-token:${PUSH_TOKEN}@github.com/Darshuse/al-wiratha.git" \
+          # تنظيف أي مسافات/أسطر التصقت أثناء النسخ
+          TOKEN="$(printf '%s' "$PUSH_TOKEN" | tr -d '[:space:]')"
+          echo "طول التوكن في الـ secret: ${#TOKEN} (المتوقع: 93)"
+          echo "بادئة التوكن: ${TOKEN:0:14}..."
+          echo "— اختبار قراءة:"
+          git ls-remote "https://x-access-token:${TOKEN}@github.com/Darshuse/al-wiratha.git" HEAD
+          echo "— الدفع:"
+          git push "https://x-access-token:${TOKEN}@github.com/Darshuse/al-wiratha.git" \
             wiratha-split:refs/heads/platform --force
