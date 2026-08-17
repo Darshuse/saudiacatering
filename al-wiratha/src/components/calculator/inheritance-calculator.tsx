@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { calculateInheritance, getMadhabDifferences, MADHABS, type HeirInput, type InheritanceResult, type Madhab } from "@/lib/inheritance";
+import { calculateInheritance, getMadhabDifferences, MADHABS, type HeirInput, type InheritanceResult, type Madhab, type CalcMode } from "@/lib/inheritance";
 import { track } from "@/lib/analytics-client";
 import { LegalDisclaimer } from "@/components/ui/legal-disclaimer";
 
@@ -20,7 +20,7 @@ const defaultInput: HeirInput = {
 function buildShareText(results: InheritanceResult[], origin: string): string {
   const lines: string[] = ["⚖️ نتيجة قسمة المواريث الشرعية", ""];
   for (const r of results) {
-    lines.push(`◈ المذهب ${r.madhabLabel}:`);
+    lines.push(`◈ ${r.mode === "SAUDI" ? r.madhabLabel : "المذهب " + r.madhabLabel}:`);
     for (const h of r.heirs) {
       const count = h.count > 1 ? ` (عددهم ${h.count})` : "";
       const amount = h.totalAmount !== undefined ? ` — ${Math.round(h.totalAmount).toLocaleString("ar-SA")} ريال` : "";
@@ -40,7 +40,8 @@ function buildShareText(results: InheritanceResult[], origin: string): string {
 export function InheritanceCalculator({ variant }: { variant: "public" | "dashboard" }) {
   const [input, setInput] = useState<HeirInput>(defaultInput);
   const [estateValue, setEstateValue] = useState("");
-  const [selectedMadhab, setSelectedMadhab] = useState<Madhab | "ALL">("ALL");
+  // الافتراضي: النظام السعودي (القاعدة)، والمذاهب الأربعة متاحة للمقارنة التعليمية
+  const [selectedMadhab, setSelectedMadhab] = useState<CalcMode | "ALL">("SAUDI");
   const [results, setResults] = useState<InheritanceResult[] | null>(null);
   const [showDiffs, setShowDiffs] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -57,13 +58,13 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
       const raw = localStorage.getItem(DRAFT_KEY);
       if (!raw) return;
       localStorage.removeItem(DRAFT_KEY);
-      const draft = JSON.parse(raw) as { input: HeirInput; estateValue: string; selectedMadhab: Madhab | "ALL" };
+      const draft = JSON.parse(raw) as { input: HeirInput; estateValue: string; selectedMadhab: CalcMode | "ALL" };
       setInput(draft.input);
       setEstateValue(draft.estateValue);
       setSelectedMadhab(draft.selectedMadhab);
       const value = draft.estateValue ? parseFloat(draft.estateValue) : undefined;
-      const madhabs: Madhab[] = draft.selectedMadhab === "ALL" ? ["HANAFI", "MALIKI", "SHAFII", "HANBALI"] : [draft.selectedMadhab];
-      setResults(madhabs.map((m) => calculateInheritance(draft.input, m, value)));
+      const modes: CalcMode[] = draft.selectedMadhab === "ALL" ? ["HANAFI", "MALIKI", "SHAFII", "HANBALI"] : [draft.selectedMadhab];
+      setResults(modes.map((m) => calculateInheritance(draft.input, m, value)));
     } catch {
       // corrupt draft — ignore
     }
@@ -78,8 +79,8 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
 
   function calculate() {
     const value = estateValue ? parseFloat(estateValue) : undefined;
-    const madhabs: Madhab[] = selectedMadhab === "ALL" ? ["HANAFI", "MALIKI", "SHAFII", "HANBALI"] : [selectedMadhab];
-    const res = madhabs.map((m) => calculateInheritance(input, m, value));
+    const modes: CalcMode[] = selectedMadhab === "ALL" ? ["HANAFI", "MALIKI", "SHAFII", "HANBALI"] : [selectedMadhab];
+    const res = modes.map((m) => calculateInheritance(input, m, value));
     setResults(res);
     track("calc_result", selectedMadhab);
   }
@@ -135,13 +136,22 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
 
       {/* Madhab selector */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 print:hidden">
-        <h2 className="font-bold text-gray-900 mb-4">اختر المذهب</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <h2 className="font-bold text-gray-900 mb-1">أساس الحساب</h2>
+        <p className="text-xs text-gray-400 mb-4">الافتراضي هو النظام السعودي. يمكنك اختيار مذهب معيّن للمقارنة التعليمية.</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <button
+            onClick={() => setSelectedMadhab("SAUDI")}
+            className={`rounded-xl p-3 text-sm font-semibold border-2 transition-all ${selectedMadhab === "SAUDI" ? "border-green-600 bg-green-50 text-green-800" : "border-gray-200 text-gray-600 hover:border-gray-300"}`}
+          >
+            🇸🇦 النظام السعودي
+            <span className="block text-xs font-normal text-gray-400 mt-0.5">نظام الأحوال الشخصية — الافتراضي</span>
+          </button>
           <button
             onClick={() => setSelectedMadhab("ALL")}
             className={`rounded-xl p-3 text-sm font-semibold border-2 transition-all ${selectedMadhab === "ALL" ? "border-blue-600 bg-blue-50 text-blue-800" : "border-gray-200 text-gray-600 hover:border-gray-300"}`}
           >
             🔄 كل المذاهب
+            <span className="block text-xs font-normal text-gray-400 mt-0.5">مقارنة تعليمية</span>
           </button>
           {MADHABS.map((m) => (
             <button
@@ -154,6 +164,18 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
             </button>
           ))}
         </div>
+
+        {/* تنبيه عند اختيار مذهب غير النظام السعودي */}
+        {selectedMadhab !== "SAUDI" && selectedMadhab !== "ALL" && (
+          <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
+            ℹ️ اخترت الحساب على <strong>المذهب {MADHABS.find((m) => m.value === selectedMadhab)?.label}</strong>.
+            {selectedMadhab === "HANAFI"
+              ? " وهو المذهب الذي يوافق النظام السعودي في مسألة الجد مع الإخوة (الجد يحجب الإخوة)."
+              : selectedMadhab === "HANBALI"
+                ? " النظام السعودي يعتمد المرجعية الحنبلية في العموم، لكنه يخالفها في مسألة الجد مع الإخوة (النظام يحجب الإخوة بالجد)."
+                : " قد تختلف النتيجة عن النظام السعودي في المسائل الخلافية (مثل الجد مع الإخوة، والرد). للنتيجة المعتمدة نظاماً اختر «النظام السعودي»."}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -234,7 +256,7 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
             </div>
           ) : (
             <>
-              {results.map((result) => <ResultCard key={result.madhab} result={result} />)}
+              {results.map((result) => <ResultCard key={result.mode} result={result} />)}
 
               {/* Share & print — the family WhatsApp group is the real growth channel */}
               <div className="flex gap-3 flex-wrap print:hidden">
@@ -330,23 +352,26 @@ export function InheritanceCalculator({ variant }: { variant: "public" | "dashbo
 
 function ResultCard({ result }: { result: InheritanceResult }) {
   const madhabColors: Record<string, string> = {
+    SAUDI: "border-green-400 bg-green-50",
     HANAFI: "border-blue-300 bg-blue-50",
     MALIKI: "border-green-300 bg-green-50",
     SHAFII: "border-purple-300 bg-purple-50",
     HANBALI: "border-orange-300 bg-orange-50",
   };
   const headerColors: Record<string, string> = {
+    SAUDI: "bg-green-700",
     HANAFI: "bg-blue-700",
     MALIKI: "bg-green-700",
     SHAFII: "bg-purple-700",
     HANBALI: "bg-orange-700",
   };
+  const isSaudi = result.mode === "SAUDI";
 
   return (
-    <div className={`rounded-xl border-2 shadow-sm overflow-hidden ${madhabColors[result.madhab]}`}>
-      <div className={`px-5 py-3 text-white ${headerColors[result.madhab]}`}>
+    <div className={`rounded-xl border-2 shadow-sm overflow-hidden ${madhabColors[result.mode]}`}>
+      <div className={`px-5 py-3 text-white ${headerColors[result.mode]}`}>
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-lg">المذهب {result.madhabLabel}</h3>
+          <h3 className="font-bold text-lg">{isSaudi ? "🇸🇦 " : "المذهب "}{result.madhabLabel}</h3>
           <div className="flex gap-2">
             {result.awl && <span className="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full">عول</span>}
             {result.radd && <span className="bg-white/20 text-white text-xs px-2 py-0.5 rounded-full">رد</span>}

@@ -6,6 +6,8 @@
  */
 
 export type Madhab = "HANAFI" | "MALIKI" | "SHAFII" | "HANBALI";
+/** وضع الحساب: النظام السعودي (الافتراضي) أو أحد المذاهب الأربعة للمقارنة التعليمية */
+export type CalcMode = "SAUDI" | Madhab;
 
 export const MADHABS: { value: Madhab; label: string; description: string }[] = [
   {
@@ -64,6 +66,7 @@ export interface HeirResult {
 
 export interface InheritanceResult {
   madhab: Madhab;
+  mode: CalcMode;       // الوضع المختار: النظام السعودي أو مذهب معيّن
   madhabLabel: string;
   heirs: HeirResult[];
   awl: boolean;         // العول — هل وقع عول؟
@@ -105,12 +108,22 @@ type ShareEntry = {
 
 export function calculateInheritance(
   input: HeirInput,
-  madhab: Madhab,
+  mode: CalcMode,
   estateValue?: number
 ): InheritanceResult {
   const blocked: { name: string; blockedBy: string }[] = [];
   const notes: string[] = [];
   const shares: ShareEntry[] = [];
+
+  // النظام السعودي: يعتمد المرجعية الحنبلية في العموم، ويحسم مسألة الجد مع الإخوة
+  // بقول أبي حنيفة واختيار ابن تيمية (الجد يحجب الإخوة) وفق المادة 212 من نظام الأحوال الشخصية.
+  const isSaudi = mode === "SAUDI";
+  const madhab: Madhab = isSaudi ? "HANBALI" : mode;
+  // الجد يحجب الإخوة: في الحنفي، وفي النظام السعودي.
+  const grandfatherBlocksSiblings = madhab === "HANAFI" || isSaudi;
+  if (isSaudi) {
+    notes.push("وضع النظام السعودي: الحساب وفق نظام الأحوال الشخصية السعودي — يعتمد المرجعية الحنبلية، ويحجب الجدُّ الإخوةَ (المادة 212، على قول أبي حنيفة واختيار ابن تيمية).");
+  }
 
   const hasChildren = input.sons > 0 || input.daughters > 0 ||
     input.sonsOfSon > 0 || input.daughtersOfSon > 0;
@@ -192,14 +205,16 @@ export function calculateInheritance(
 
   // --- الجد من جهة الأب (عند عدم وجود الأب) ---
   if (input.grandfatherPaternal && !input.father) {
-    if (madhab === "HANAFI") {
-      // الحنفية: الجد كالأب تماماً — يحجب الإخوة
-      shares.push({ key: "grandfather", nameAr: "الجد لأب", count: 1, numerator: 1, denominator: 1, basis: "الجد كالأب في مذهب الحنفية — يرث ما يرثه الأب ويحجب الإخوة", isAsaba: true, notes: "الحنفية: الجد يحجب الإخوة تماماً" });
+    if (grandfatherBlocksSiblings) {
+      // الحنفية والنظام السعودي: الجد كالأب تماماً — يحجب الإخوة
+      const src = isSaudi ? "النظام السعودي (م212): الجد يحجب الإخوة كالأب" : "الحنفية: الجد يحجب الإخوة تماماً";
+      const by = isSaudi ? "الجد (النظام السعودي)" : "الجد (حنفي)";
+      shares.push({ key: "grandfather", nameAr: "الجد لأب", count: 1, numerator: 1, denominator: 1, basis: `الجد كالأب — يرث ما يرثه الأب ويحجب الإخوة (${isSaudi ? "النظام السعودي، م212" : "مذهب الحنفية"})`, isAsaba: true, notes: src });
       if (hasSiblings) {
-        if (input.fullBrothers > 0) blocked.push({ name: "الإخوة الأشقاء", blockedBy: "الجد (حنفي)" });
-        if (input.fullSisters > 0) blocked.push({ name: "الأخوات الشقيقات", blockedBy: "الجد (حنفي)" });
-        if (input.halfBrothersPaternal > 0) blocked.push({ name: "الإخوة لأب", blockedBy: "الجد (حنفي)" });
-        if (input.halfSistersPaternal > 0) blocked.push({ name: "الأخوات لأب", blockedBy: "الجد (حنفي)" });
+        if (input.fullBrothers > 0) blocked.push({ name: "الإخوة الأشقاء", blockedBy: by });
+        if (input.fullSisters > 0) blocked.push({ name: "الأخوات الشقيقات", blockedBy: by });
+        if (input.halfBrothersPaternal > 0) blocked.push({ name: "الإخوة لأب", blockedBy: by });
+        if (input.halfSistersPaternal > 0) blocked.push({ name: "الأخوات لأب", blockedBy: by });
       }
     } else {
       // المالكية والشافعية والحنابلة: الجد يشارك الإخوة (المقاسمة)
@@ -217,7 +232,7 @@ export function calculateInheritance(
   }
 
   // --- الأبناء والبنات ---
-  const fatherBlocksSiblings = input.father || (madhab === "HANAFI" && input.grandfatherPaternal);
+  const fatherBlocksSiblings = input.father || (grandfatherBlocksSiblings && input.grandfatherPaternal);
   if (input.sons > 0 || input.daughters > 0) {
     if (input.sons > 0 && input.daughters > 0) {
       // للذكر مثل حظ الأنثيين — يرثون بالتعصيب
@@ -264,7 +279,7 @@ export function calculateInheritance(
   }
 
   // --- الإخوة والأخوات (عند عدم حجبهم) ---
-  if (!input.father && !(madhab === "HANAFI" && input.grandfatherPaternal)) {
+  if (!input.father && !(grandfatherBlocksSiblings && input.grandfatherPaternal)) {
     // الإخوة لأم
     const uterineSiblings = input.halfBrothersMaternal + input.halfSistersMaternal;
     if (uterineSiblings > 0 && !hasChildren && !input.father && !input.grandfatherPaternal) {
@@ -360,7 +375,8 @@ export function calculateInheritance(
 
   // --- حساب العول والرد ---
   const result = computeResult(shares, madhab, blocked, notes, estateValue);
-  return { ...result, madhab, madhabLabel: MADHABS.find((m) => m.value === madhab)!.label };
+  const madhabLabel = isSaudi ? "النظام السعودي" : MADHABS.find((m) => m.value === madhab)!.label;
+  return { ...result, madhab, mode, madhabLabel };
 }
 
 function computeResult(
@@ -369,7 +385,7 @@ function computeResult(
   blocked: { name: string; blockedBy: string }[],
   notes: string[],
   estateValue?: number
-): Omit<InheritanceResult, "madhab" | "madhabLabel"> {
+): Omit<InheritanceResult, "madhab" | "mode" | "madhabLabel"> {
   // تجميع المقامات وإيجاد المضاعف المشترك
   const furudShares = shares.filter((s) => !s.isAsaba);
   const asabaShares = shares.filter((s) => s.isAsaba);
