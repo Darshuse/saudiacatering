@@ -30,8 +30,10 @@ jobs:
           echo "بادئة التوكن: ${TOKEN:0:22}... (الجديد ينتهي بـ I0Ss / القديم I0Lv)"
           echo "— هوية التوكن من GitHub مباشرة:"
           curl -s -H "Authorization: Bearer ${TOKEN}" https://api.github.com/user | grep -o '"login": *"[^"]*"' || echo "فشل التحقق من الهوية"
-          echo "— وصول التوكن للريبو عبر API:"
+          echo "— وصول التوكن للريبو عبر API (يحتاج Metadata فقط):"
           curl -s -o /dev/null -w "HTTP %{http_code}\n" -H "Authorization: Bearer ${TOKEN}" https://api.github.com/repos/Darshuse/al-wiratha
+          echo "— فحص صلاحية Contents تحديداً (قراءة ملفات الريبو):"
+          curl -s -o /dev/null -w "HTTP %{http_code} (200=Contents موجودة، 404=Contents ناقصة)\n" -H "Authorization: Bearer ${TOKEN}" https://api.github.com/repos/Darshuse/al-wiratha/contents/
           # التوكنات الشخصية fine-grained تحتاج اسم المستخدم الحقيقي في basic auth
           AUTH_URL="https://Darshuse:${TOKEN}@github.com/Darshuse/al-wiratha.git"
           echo "— اختبار قراءة git (صيغة username):"
