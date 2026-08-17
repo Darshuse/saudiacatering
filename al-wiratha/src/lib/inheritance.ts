@@ -150,8 +150,14 @@ export function calculateInheritance(
     } else {
       // تفقد المذاهب في مسألة العمريتين
       if (input.father && (input.husbands > 0 || input.wives > 0)) {
-        // العمريتان: الأم تأخذ ثلث الباقي بعد نصيب الزوج/الزوجة
-        shares.push({ key: "mother", nameAr: "الأم", count: 1, numerator: 1, denominator: 3, basis: "الثلث من أصل التركة في مسألة الغراوين/العمريتين", notes: "مسألة العمريتين: الأم تأخذ ثلث أصل التركة وفق الجمهور" });
+        // مسألة العُمريّتين (الغرّاوين): للأم ثلث الباقي بعد فرض الزوج/الزوجة — باتفاق الأئمة الأربعة (قضاء عمر رضي الله عنه)
+        if (input.husbands > 0) {
+          // زوج (النصف) → الباقي = 1/2 → ثلث الباقي = 1/6 من أصل التركة، والباقي (1/3) للأب تعصيباً
+          shares.push({ key: "mother", nameAr: "الأم", count: 1, numerator: 1, denominator: 6, basis: "مسألة العُمريّتين: للأم ثلث الباقي بعد فرض الزوج (النصف) = سدس التركة", notes: "مسألة العُمريّتين (الغرّاوين): للأم ثلث الباقي بعد نصيب الزوج — باتفاق المذاهب الأربعة، ويأخذ الأب الباقي تعصيباً" });
+        } else {
+          // زوجة (الربع) → الباقي = 3/4 → ثلث الباقي = 1/4 من أصل التركة، والباقي (1/2) للأب تعصيباً
+          shares.push({ key: "mother", nameAr: "الأم", count: 1, numerator: 1, denominator: 4, basis: "مسألة العُمريّتين: للأم ثلث الباقي بعد فرض الزوجة (الربع) = ربع التركة", notes: "مسألة العُمريّتين (الغرّاوين): للأم ثلث الباقي بعد نصيب الزوجة — باتفاق المذاهب الأربعة، ويأخذ الأب الباقي تعصيباً" });
+        }
       } else {
         shares.push({ key: "mother", nameAr: "الأم", count: 1, numerator: 1, denominator: 3, basis: "﴿فَإِن لَّمْ يَكُن لَّهُ وَلَدٌ﴾ — الثلث بدون ولد أو إخوة" });
       }
@@ -264,43 +270,78 @@ export function calculateInheritance(
       }
     }
 
-    // الإخوة الأشقاء
-    if (!hasChildren && input.fullBrothers > 0 || input.fullSisters > 0) {
-      const fullSiblings = input.fullBrothers + input.fullSisters;
-      if (input.fullBrothers > 0 && input.fullSisters > 0) {
-        const totalParts = input.fullBrothers * 2 + input.fullSisters;
-        shares.push({ key: "fullBrothers", nameAr: "الإخوة الأشقاء", count: input.fullBrothers, numerator: input.fullBrothers * 2, denominator: totalParts, basis: "للذكر مثل حظ الأنثيين", isAsaba: true });
-        shares.push({ key: "fullSisters", nameAr: "الأخوات الشقيقات", count: input.fullSisters, numerator: input.fullSisters, denominator: totalParts, basis: "للذكر مثل حظ الأنثيين", isAsaba: true });
-      } else if (input.fullBrothers > 0) {
-        shares.push({ key: "fullBrothers", nameAr: "الإخوة الأشقاء", count: input.fullBrothers, numerator: 1, denominator: 1, basis: "الإخوة الأشقاء عصبة يرثون الباقي", isAsaba: true });
-        if (input.halfBrothersPaternal > 0) blocked.push({ name: "الإخوة لأب", blockedBy: "الإخوة الأشقاء" });
-        if (input.halfSistersPaternal > 0) blocked.push({ name: "الأخوات لأب", blockedBy: "الإخوة الأشقاء" });
-      } else if (input.fullSisters > 0 && !hasChildren) {
-        if (input.fullSisters === 1) {
-          shares.push({ key: "fullSisters", nameAr: "الأخت الشقيقة", count: 1, numerator: 1, denominator: 2, basis: "الأخت الشقيقة تأخذ النصف عند الانفراد" });
+    // الإخوة والأخوات الأشقاء
+    const femaleDescendantsOnly = hasChildren && !hasMaleDescendants; // بنات و/أو بنات ابن دون ذكور من الفروع
+    if (input.fullBrothers > 0 || input.fullSisters > 0) {
+      if (hasMaleDescendants) {
+        // الابن أو ابن الابن يحجب الإخوة الأشقاء حجب حرمان
+        if (input.fullBrothers > 0) blocked.push({ name: "الإخوة الأشقاء", blockedBy: "الابن/ابن الابن" });
+        if (input.fullSisters > 0) blocked.push({ name: "الأخوات الشقيقات", blockedBy: "الابن/ابن الابن" });
+      } else if (femaleDescendantsOnly) {
+        // العصبة مع الغير: الأخوات الشقيقات مع البنات/بنات الابن يصرن عصبة يرثن الباقي بعد أصحاب الفروض
+        if (input.fullBrothers > 0 && input.fullSisters > 0) {
+          const totalParts = input.fullBrothers * 2 + input.fullSisters;
+          shares.push({ key: "fullBrothers", nameAr: "الإخوة الأشقاء", count: input.fullBrothers, numerator: input.fullBrothers * 2, denominator: totalParts, basis: "الإخوة الأشقاء عصبة يرثون الباقي بعد فرض البنات — للذكر مثل حظ الأنثيين", isAsaba: true });
+          shares.push({ key: "fullSisters", nameAr: "الأخوات الشقيقات", count: input.fullSisters, numerator: input.fullSisters, denominator: totalParts, basis: "الأخوات الشقيقات عصبة مع إخوتهن — للذكر مثل حظ الأنثيين", isAsaba: true });
+        } else if (input.fullBrothers > 0) {
+          shares.push({ key: "fullBrothers", nameAr: "الإخوة الأشقاء", count: input.fullBrothers, numerator: 1, denominator: 1, basis: "الإخوة الأشقاء عصبة يرثون الباقي بعد فرض البنات", isAsaba: true });
         } else {
-          shares.push({ key: "fullSisters", nameAr: "الأخوات الشقيقات", count: input.fullSisters, numerator: 2, denominator: 3, basis: "الأخوات الشقيقات يأخذن الثلثين" });
+          shares.push({ key: "fullSisters", nameAr: input.fullSisters === 1 ? "الأخت الشقيقة" : "الأخوات الشقيقات", count: input.fullSisters, numerator: 1, denominator: 1, basis: "العصبة مع الغير: الأخت الشقيقة (فأكثر) تصير عصبة مع البنات/بنات الابن فتأخذ الباقي — لقوله ﷺ: «اجعلوا الأخوات مع البنات عصبة» (رواه البخاري)", isAsaba: true, notes: "عصبة مع الغير: الأخوات الشقيقات مع البنات يأخذن ما بقي بعد أصحاب الفروض" });
+        }
+        // الأشقاء بوصفهم عصبة مع البنات يحجبون الإخوة والأخوات لأب
+        if (input.halfBrothersPaternal > 0) blocked.push({ name: "الإخوة لأب", blockedBy: "الأشقاء (عصبة مع البنات)" });
+        if (input.halfSistersPaternal > 0) blocked.push({ name: "الأخوات لأب", blockedBy: "الأشقاء (عصبة مع البنات)" });
+      } else {
+        // كلالة: لا فرع وارث
+        if (input.fullBrothers > 0 && input.fullSisters > 0) {
+          const totalParts = input.fullBrothers * 2 + input.fullSisters;
+          shares.push({ key: "fullBrothers", nameAr: "الإخوة الأشقاء", count: input.fullBrothers, numerator: input.fullBrothers * 2, denominator: totalParts, basis: "للذكر مثل حظ الأنثيين", isAsaba: true });
+          shares.push({ key: "fullSisters", nameAr: "الأخوات الشقيقات", count: input.fullSisters, numerator: input.fullSisters, denominator: totalParts, basis: "للذكر مثل حظ الأنثيين", isAsaba: true });
+        } else if (input.fullBrothers > 0) {
+          shares.push({ key: "fullBrothers", nameAr: "الإخوة الأشقاء", count: input.fullBrothers, numerator: 1, denominator: 1, basis: "الإخوة الأشقاء عصبة يرثون الباقي", isAsaba: true });
+          if (input.halfBrothersPaternal > 0) blocked.push({ name: "الإخوة لأب", blockedBy: "الإخوة الأشقاء" });
+          if (input.halfSistersPaternal > 0) blocked.push({ name: "الأخوات لأب", blockedBy: "الإخوة الأشقاء" });
+        } else {
+          if (input.fullSisters === 1) {
+            shares.push({ key: "fullSisters", nameAr: "الأخت الشقيقة", count: 1, numerator: 1, denominator: 2, basis: "الأخت الشقيقة تأخذ النصف عند الانفراد" });
+          } else {
+            shares.push({ key: "fullSisters", nameAr: "الأخوات الشقيقات", count: input.fullSisters, numerator: 2, denominator: 3, basis: "الأخوات الشقيقات يأخذن الثلثين" });
+          }
         }
       }
     }
 
-    // الإخوة لأب (إن لم يُحجبوا)
-    const fullBrothersExist = input.fullBrothers > 0;
-    const fullSistersExist = input.fullSisters > 0;
-    const halfPaternalBlocked = fullBrothersExist || (fullSistersExist && !hasMaleDescendants);
-
-    if (!halfPaternalBlocked && !hasChildren && (input.halfBrothersPaternal > 0 || input.halfSistersPaternal > 0)) {
-      if (input.halfBrothersPaternal > 0 && input.halfSistersPaternal > 0) {
-        const totalParts = input.halfBrothersPaternal * 2 + input.halfSistersPaternal;
-        shares.push({ key: "halfBrothersP", nameAr: "الإخوة لأب", count: input.halfBrothersPaternal, numerator: input.halfBrothersPaternal * 2, denominator: totalParts, basis: "للذكر مثل حظ الأنثيين", isAsaba: true });
-        shares.push({ key: "halfSistersP", nameAr: "الأخوات لأب", count: input.halfSistersPaternal, numerator: input.halfSistersPaternal, denominator: totalParts, basis: "للذكر مثل حظ الأنثيين", isAsaba: true });
-      } else if (input.halfBrothersPaternal > 0) {
-        shares.push({ key: "halfBrothersP", nameAr: "الإخوة لأب", count: input.halfBrothersPaternal, numerator: 1, denominator: 1, basis: "الإخوة لأب عصبة يرثون الباقي", isAsaba: true });
-      } else if (input.halfSistersPaternal > 0) {
-        if (input.halfSistersPaternal === 1) {
-          shares.push({ key: "halfSistersP", nameAr: "الأخت لأب", count: 1, numerator: 1, denominator: 2, basis: "الأخت لأب تأخذ النصف" });
+    // الإخوة والأخوات لأب (يُحجبون بالأشقاء، ولا يرثون إلا عند عدم وجود الأشقاء)
+    const hasFullSiblings = input.fullBrothers > 0 || input.fullSisters > 0;
+    if (!hasFullSiblings && (input.halfBrothersPaternal > 0 || input.halfSistersPaternal > 0)) {
+      if (hasMaleDescendants) {
+        if (input.halfBrothersPaternal > 0) blocked.push({ name: "الإخوة لأب", blockedBy: "الابن/ابن الابن" });
+        if (input.halfSistersPaternal > 0) blocked.push({ name: "الأخوات لأب", blockedBy: "الابن/ابن الابن" });
+      } else if (femaleDescendantsOnly) {
+        // العصبة مع الغير للإخوة/الأخوات لأب عند عدم وجود الأشقاء
+        if (input.halfBrothersPaternal > 0 && input.halfSistersPaternal > 0) {
+          const totalParts = input.halfBrothersPaternal * 2 + input.halfSistersPaternal;
+          shares.push({ key: "halfBrothersP", nameAr: "الإخوة لأب", count: input.halfBrothersPaternal, numerator: input.halfBrothersPaternal * 2, denominator: totalParts, basis: "الإخوة لأب عصبة يرثون الباقي بعد فرض البنات — للذكر مثل حظ الأنثيين", isAsaba: true });
+          shares.push({ key: "halfSistersP", nameAr: "الأخوات لأب", count: input.halfSistersPaternal, numerator: input.halfSistersPaternal, denominator: totalParts, basis: "الأخوات لأب عصبة مع إخوتهن — للذكر مثل حظ الأنثيين", isAsaba: true });
+        } else if (input.halfBrothersPaternal > 0) {
+          shares.push({ key: "halfBrothersP", nameAr: "الإخوة لأب", count: input.halfBrothersPaternal, numerator: 1, denominator: 1, basis: "الإخوة لأب عصبة يرثون الباقي بعد فرض البنات", isAsaba: true });
         } else {
-          shares.push({ key: "halfSistersP", nameAr: "الأخوات لأب", count: input.halfSistersPaternal, numerator: 2, denominator: 3, basis: "الأخوات لأب يأخذن الثلثين" });
+          shares.push({ key: "halfSistersP", nameAr: input.halfSistersPaternal === 1 ? "الأخت لأب" : "الأخوات لأب", count: input.halfSistersPaternal, numerator: 1, denominator: 1, basis: "العصبة مع الغير: الأخوات لأب مع البنات (عند عدم وجود الأشقاء) يأخذن الباقي بعد أصحاب الفروض", isAsaba: true, notes: "عصبة مع الغير: الأخوات لأب مع البنات يأخذن ما بقي بعد أصحاب الفروض" });
+        }
+      } else {
+        // كلالة
+        if (input.halfBrothersPaternal > 0 && input.halfSistersPaternal > 0) {
+          const totalParts = input.halfBrothersPaternal * 2 + input.halfSistersPaternal;
+          shares.push({ key: "halfBrothersP", nameAr: "الإخوة لأب", count: input.halfBrothersPaternal, numerator: input.halfBrothersPaternal * 2, denominator: totalParts, basis: "للذكر مثل حظ الأنثيين", isAsaba: true });
+          shares.push({ key: "halfSistersP", nameAr: "الأخوات لأب", count: input.halfSistersPaternal, numerator: input.halfSistersPaternal, denominator: totalParts, basis: "للذكر مثل حظ الأنثيين", isAsaba: true });
+        } else if (input.halfBrothersPaternal > 0) {
+          shares.push({ key: "halfBrothersP", nameAr: "الإخوة لأب", count: input.halfBrothersPaternal, numerator: 1, denominator: 1, basis: "الإخوة لأب عصبة يرثون الباقي", isAsaba: true });
+        } else {
+          if (input.halfSistersPaternal === 1) {
+            shares.push({ key: "halfSistersP", nameAr: "الأخت لأب", count: 1, numerator: 1, denominator: 2, basis: "الأخت لأب تأخذ النصف" });
+          } else {
+            shares.push({ key: "halfSistersP", nameAr: "الأخوات لأب", count: input.halfSistersPaternal, numerator: 2, denominator: 3, basis: "الأخوات لأب يأخذن الثلثين" });
+          }
         }
       }
     }
@@ -382,20 +423,81 @@ function computeResult(
 
     // توزيع الباقي على العصبة
     if (asabaShares.length > 0 && remaining > 0.001) {
-      const totalAsabaParts = asabaShares.reduce((sum, s) => sum + s.numerator / s.denominator, 0);
-      for (const s of asabaShares) {
-        const asabaPct = (s.numerator / s.denominator / totalAsabaParts) * remaining * 100;
+      // مقاسمة الجد مع الإخوة (جمهور المالكية والشافعية والحنابلة): الجد يأخذ الأحظّ
+      const grandfatherEntry = asabaShares.find((s) => s.key === "grandfather");
+      const siblingKeys = ["fullBrothers", "fullSisters", "halfBrothersP", "halfSistersP"];
+      const siblingEntries = asabaShares.filter((s) => siblingKeys.includes(s.key));
+      const descendantKeys = ["sons", "daughters", "sonsOfSon", "daughtersOfSon"];
+      const hasDescendantEntry = shares.some((s) => descendantKeys.includes(s.key));
+
+      if (grandfatherEntry && siblingEntries.length > 0 && !hasDescendantEntry && madhab !== "HANAFI") {
+        // عدد الإخوة والأخوات المقاسِمين — الأخت نصف أخ في المقاسمة
+        let brothers = 0;
+        let sisters = 0;
+        for (const s of siblingEntries) {
+          if (s.key === "fullBrothers" || s.key === "halfBrothersP") brothers += s.count;
+          else sisters += s.count;
+        }
+        const hasFurud = furudShares.length > 0;
+        const muqasamaShare = remaining * (1 / (1 + brothers + 0.5 * sisters)); // المقاسمة كأخ
+        const thirdShare = remaining / 3; // ثلث الباقي عند وجود فروض = ثلث التركة عند عدمها
+        const sixthOfEstate = hasFurud ? 1 / 6 : 0; // سدس التركة أرضيةٌ للجد عند وجود أصحاب الفروض
+        const bestRaw = Math.max(muqasamaShare, thirdShare, sixthOfEstate);
+        const grandfatherShare = Math.min(bestRaw, remaining); // لا يتجاوز الباقي
+        const whichBest =
+          bestRaw === muqasamaShare ? "المقاسمة كأخ" :
+          bestRaw === thirdShare ? (hasFurud ? "ثلث الباقي" : "ثلث التركة") :
+          "سدس التركة";
+
         heirs.push({
-          name: s.key,
-          nameAr: s.nameAr,
-          count: s.count,
-          fraction: `${simplifyFraction(s.numerator, s.denominator)} من الباقي`,
-          percentage: asabaPct,
-          amountPerPerson: estateValue ? (asabaPct / 100 / s.count) * estateValue : undefined,
-          totalAmount: estateValue ? (asabaPct / 100) * estateValue : undefined,
-          basis: s.basis,
-          notes: s.notes,
+          name: grandfatherEntry.key,
+          nameAr: grandfatherEntry.nameAr,
+          count: grandfatherEntry.count,
+          fraction: `الأحظّ للجد: ${whichBest}`,
+          percentage: grandfatherShare * 100,
+          amountPerPerson: estateValue ? (grandfatherShare / grandfatherEntry.count) * estateValue : undefined,
+          totalAmount: estateValue ? grandfatherShare * estateValue : undefined,
+          basis: grandfatherEntry.basis,
+          notes: `أُعطي الجد الأحظّ له: ${whichBest}`,
         });
+
+        // باقي العصبة (الإخوة والأخوات) للذكر مثل حظ الأنثيين
+        const siblingsPortion = remaining - grandfatherShare;
+        const totalUnits = brothers * 2 + sisters; // الأخ سهمان والأخت سهم
+        for (const s of siblingEntries) {
+          const isBrotherEntry = s.key === "fullBrothers" || s.key === "halfBrothersP";
+          const entryUnits = isBrotherEntry ? s.count * 2 : s.count;
+          const entryPct = totalUnits > 0 ? (entryUnits / totalUnits) * siblingsPortion * 100 : 0;
+          heirs.push({
+            name: s.key,
+            nameAr: s.nameAr,
+            count: s.count,
+            fraction: `${simplifyFraction(entryUnits, totalUnits)} من الباقي بعد الجد`,
+            percentage: entryPct,
+            amountPerPerson: estateValue ? (entryPct / 100 / s.count) * estateValue : undefined,
+            totalAmount: estateValue ? (entryPct / 100) * estateValue : undefined,
+            basis: s.basis,
+            notes: s.notes,
+          });
+        }
+        notes.push("مقاسمة الجد مع الإخوة: أُعطي الجد الأحظّ من (المقاسمة كأخ، أو ثلث الباقي/ثلث التركة، أو سدس التركة عند وجود أصحاب الفروض)، والباقي للإخوة للذكر مثل حظ الأنثيين");
+      } else {
+        // التوزيع الاعتيادي للعصبة بحسب أنصبتهم
+        const totalAsabaParts = asabaShares.reduce((sum, s) => sum + s.numerator / s.denominator, 0);
+        for (const s of asabaShares) {
+          const asabaPct = (s.numerator / s.denominator / totalAsabaParts) * remaining * 100;
+          heirs.push({
+            name: s.key,
+            nameAr: s.nameAr,
+            count: s.count,
+            fraction: `${simplifyFraction(s.numerator, s.denominator)} من الباقي`,
+            percentage: asabaPct,
+            amountPerPerson: estateValue ? (asabaPct / 100 / s.count) * estateValue : undefined,
+            totalAmount: estateValue ? (asabaPct / 100) * estateValue : undefined,
+            basis: s.basis,
+            notes: s.notes,
+          });
+        }
       }
     } else if (asabaShares.length === 0 && remaining > 0.001 && furudShares.length > 0) {
       // الرد
